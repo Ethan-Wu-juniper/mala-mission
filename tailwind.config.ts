@@ -84,6 +84,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				fadeInUp: {
+					from: {
+						opacity: '0',
+						transform: 'translateY(16px) scale(0.9)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translateY(0) scale(1)'
+					}
 				}
 			},
 			animation: {

@@ -44,6 +44,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const [title, setTitle] = useState("");
   const [capacity, setCapacity] = useState(4);
   const [creating, setCreating] = useState(false);
   const [myRooms, setMyRooms] = useState<Room[] | null>(null);
@@ -70,7 +71,7 @@ const Index = () => {
     }
     setCreating(true);
     try {
-      const { roomId } = await createRoom(capacity, user.uid, user.photoURL);
+      const { roomId } = await createRoom(capacity, user.uid, user.photoURL, title.trim());
       navigate(`/room/${roomId}`);
     } catch (err) {
       toast({
@@ -115,6 +116,21 @@ const Index = () => {
               <p className="text-sm text-neutral-600 leading-relaxed">
                 朋友會被隨機分到「四川」或「重慶」，各自挑一間餐廳推薦
               </p>
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-neutral-700">
+                房間標題
+              </Label>
+              <Input
+                id="title"
+                type="text"
+                placeholder="例：週五聚餐"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={creating}
+                className="h-11"
+              />
             </div>
 
             <div className="space-y-3">
@@ -184,8 +200,8 @@ const Index = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-neutral-500 truncate">
-                              {room.id}
+                            <span className="text-sm font-medium text-neutral-800 truncate">
+                              {room.title || room.id}
                             </span>
                             <Badge
                               variant={

@@ -41,9 +41,11 @@ import type { Player, Room, Submission, Vote } from "@/lib/types";
 const Shell = ({
   children,
   narrow = true,
+  title,
 }: {
   children: React.ReactNode;
   narrow?: boolean;
+  title?: string;
 }) => {
   const { user, signOut } = useAuth();
   return (
@@ -60,6 +62,14 @@ const Shell = ({
             </div>
             <span className="font-semibold">麻辣任務</span>
           </div>
+          {title && (
+            <>
+              <span className="text-neutral-300 text-sm">/</span>
+              <span className="text-sm font-medium text-neutral-600 truncate max-w-[140px] sm:max-w-xs">
+                {title}
+              </span>
+            </>
+          )}
         </Link>
         <div className="flex items-center gap-3 text-sm">
           <span className="text-neutral-600 hidden sm:inline">
@@ -225,7 +235,7 @@ const RoomPage = () => {
   if (!me) {
     if (isFull) {
       return (
-        <Shell>
+        <Shell title={room.title}>
           <CenterMessage title="房間已滿" subtitle={`已經有 ${room.capacity} 人在裡面了`} />
         </Shell>
       );
@@ -235,7 +245,7 @@ const RoomPage = () => {
       handleJoin();
     }
     return (
-      <Shell>
+      <Shell title={room.title}>
         <div className="py-16 text-center space-y-6">
           <UserPlus className="w-12 h-12 text-rose-600 mx-auto" />
           <div className="space-y-1">
@@ -269,7 +279,7 @@ const RoomPage = () => {
   // Results phase
   if (allSubmitted && allFinalized && user) {
     return (
-      <Shell>
+      <Shell title={room.title}>
         <ResultsView
           submissions={submissions}
           votes={votes}
@@ -285,7 +295,7 @@ const RoomPage = () => {
   // Voting phase
   if (allSubmitted && user) {
     return (
-      <Shell narrow={false}>
+      <Shell narrow={false} title={room.title}>
         <VotingView
           submissions={submissions}
           players={players}
@@ -306,7 +316,7 @@ const RoomPage = () => {
   // I submitted, waiting for others
   if (mySubmission) {
     return (
-      <Shell>
+      <Shell title={room.title}>
         <div className="py-10 space-y-8 text-center">
           <NicknameBadge name={nickname} />
           <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto" />
@@ -349,7 +359,7 @@ const RoomPage = () => {
     };
 
     return (
-      <Shell>
+      <Shell title={room.title}>
         <div className="py-6 space-y-8">
           <NicknameBadge name={nickname} />
           {!revealed ? (
@@ -373,7 +383,7 @@ const RoomPage = () => {
 
   // Joined, waiting for others to join
   return (
-    <Shell>
+    <Shell title={room.title}>
       <div className="py-10 space-y-10">
         <NicknameBadge name={nickname} />
 

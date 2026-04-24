@@ -5,6 +5,16 @@ import { RestaurantDialog } from "@/components/features/RestaurantDialog";
 import { cn } from "@/lib/utils";
 import type { Player, Submission, Vote } from "@/lib/types";
 
+function buildDelayMap(ranked: RankedEntry[]): Map<string, number> {
+  const map = new Map<string, number>();
+  let t = 0;
+  for (const entry of ranked) {
+    map.set(entry.submission.playerId, t);
+    t += entry.rank <= 3 ? 600 : 150;
+  }
+  return map;
+}
+
 interface Props {
   submissions: Submission[];
   votes: Vote[];
@@ -70,6 +80,7 @@ const PodiumBlock = ({
   height,
   color,
   playerMap,
+  delayMap,
   onOpen,
 }: {
   rank: number;
@@ -77,14 +88,20 @@ const PodiumBlock = ({
   height: string;
   color: string;
   playerMap: Map<string, Player>;
+  delayMap: Map<string, number>;
   onOpen: (s: Submission) => void;
 }) => (
   <div className="flex flex-col items-center">
     <div className="flex flex-wrap justify-center gap-2 mb-3 max-w-[160px]">
       {entries.map(({ submission, total }) => {
         const player = playerMap.get(submission.playerId);
+        const delay = delayMap.get(submission.playerId) ?? 0;
         return (
-          <div key={submission.playerId} className="flex flex-col items-center gap-1">
+          <div
+            key={submission.playerId}
+            className="flex flex-col items-center gap-1 animate-[fadeInUp_0.5s_ease-out_both]"
+            style={{ animationDelay: `${delay}ms` }}
+          >
             <Avatar
               playerId={submission.playerId}
               playerName={player?.name ?? submission.restaurantName}
@@ -157,6 +174,8 @@ export const ResultsView = ({ submissions, votes, players, myUid, hostUid, onSch
   // display order: 2nd left, 1st center, 3rd right
   const podiumOrder = [2, 1, 3].filter((r) => byRank.has(r));
 
+  const delayMap = useMemo(() => buildDelayMap(ranked), [ranked]);
+
   const openedRanked = opened
     ? ranked.find((r) => r.submission.playerId === opened.playerId)
     : null;
@@ -179,6 +198,7 @@ export const ResultsView = ({ submissions, votes, players, myUid, hostUid, onSch
                 height={podiumConfig[rank].height}
                 color={podiumConfig[rank].color}
                 playerMap={playerMap}
+                delayMap={delayMap}
                 onOpen={setOpened}
               />
             ))}
@@ -193,8 +213,13 @@ export const ResultsView = ({ submissions, votes, players, myUid, hostUid, onSch
         <div className="flex flex-wrap justify-center gap-5 pt-2">
           {others.map(({ submission, total, rank }) => {
             const player = playerMap.get(submission.playerId);
+            const delay = delayMap.get(submission.playerId) ?? 0;
             return (
-              <div key={submission.playerId} className="flex flex-col items-center gap-1">
+              <div
+                key={submission.playerId}
+                className="flex flex-col items-center gap-1 animate-[fadeInUp_0.5s_ease-out_both]"
+                style={{ animationDelay: `${delay}ms` }}
+              >
                 <span className="text-[11px] text-neutral-400 font-medium">#{rank}</span>
                 <Avatar
                   playerId={submission.playerId}

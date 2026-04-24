@@ -62,6 +62,7 @@ export async function createRoom(
   capacity: number,
   hostUid: string,
   hostPhotoURL?: string | null,
+  title?: string,
 ): Promise<{ roomId: string }> {
   if (capacity < 2) throw new Error("人數至少要 2 人");
   const roomId = newId();
@@ -69,6 +70,7 @@ export async function createRoom(
 
   await runTransaction(db, async (tx) => {
     tx.set(roomDoc(roomId), {
+      title: title || "",
       capacity,
       status: "waiting",
       assignments: null,

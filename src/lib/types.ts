@@ -11,6 +11,7 @@ export type RoomStatus = "waiting" | "drawn";
 
 export interface Room {
   id: string;
+  title: string;
   capacity: number;
   status: RoomStatus;
   assignments: Record<string, City> | null;
