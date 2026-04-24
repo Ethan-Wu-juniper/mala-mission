@@ -4,10 +4,11 @@ import { Check, Loader2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RestaurantCard } from "@/components/features/RestaurantCard";
 import { RestaurantDialog } from "@/components/features/RestaurantDialog";
-import type { Submission, Vote } from "@/lib/types";
+import type { Player, Submission, Vote } from "@/lib/types";
 
 interface Props {
   submissions: Submission[];
+  players: Player[];
   myUid: string;
   budget: number;
   myVote: Vote | null;
@@ -19,6 +20,7 @@ interface Props {
 
 export const VotingView = ({
   submissions,
+  players,
   myUid,
   budget,
   myVote,
@@ -43,6 +45,11 @@ export const VotingView = ({
   }, [myVote]);
 
   const finalized = myVote?.finalized ?? false;
+
+  const playerMap = useMemo(
+    () => new Map(players.map((p) => [p.id, p])),
+    [players],
+  );
 
   const used = useMemo(
     () => Object.values(allocations).reduce((a, b) => a + b, 0),
@@ -113,6 +120,7 @@ export const VotingView = ({
                 maxStars={budget}
                 remaining={remaining}
                 disabled={finalized}
+                playerName={playerMap.get(sub.playerId)?.name}
                 onCardClick={() => setOpened(sub)}
                 onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
               />

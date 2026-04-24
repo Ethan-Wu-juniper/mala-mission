@@ -12,6 +12,7 @@ interface Props {
   remaining: number;
   disabled: boolean;
   totalPoints?: number;
+  playerName?: string;
   onCardClick: () => void;
   onSetPoints: (points: number) => void;
 }
@@ -24,6 +25,7 @@ export const RestaurantCard = ({
   remaining,
   disabled,
   totalPoints,
+  playerName,
   onCardClick,
   onSetPoints,
 }: Props) => {
@@ -139,20 +141,28 @@ export const RestaurantCard = ({
         </div>
       )}
 
-      {/* bottom-left: name + dish + maps */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-4 pt-6">
-        <h3 className="font-bold text-base leading-tight drop-shadow-md line-clamp-2">
-          {submission.restaurantName}
-        </h3>
-        {submission.dish && (
-          <p className="text-xs opacity-85 drop-shadow line-clamp-1 leading-relaxed mt-1">
-            {submission.dish}
-          </p>
-        )}
-        {submission.mapsUrl && (
-          <div className="flex items-center gap-1 mt-2 text-[10px] tracking-widest opacity-70">
-            <ExternalLink className="w-2.5 h-2.5" />
-            <span>MAPS</span>
+      {/* bottom: name + dish + maps left, from right */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-4 pt-6 flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="font-bold text-base leading-tight drop-shadow-md line-clamp-2">
+            {submission.restaurantName}
+          </h3>
+          {submission.dish && (
+            <p className="text-xs opacity-85 drop-shadow line-clamp-1 leading-relaxed mt-1">
+              {submission.dish}
+            </p>
+          )}
+          {submission.mapsUrl && (
+            <div className="flex items-center gap-1 mt-2 text-[10px] tracking-widest opacity-70">
+              <ExternalLink className="w-2.5 h-2.5" />
+              <span>MAPS</span>
+            </div>
+          )}
+        </div>
+        {playerName && (
+          <div className="shrink-0 text-right">
+            <span className="text-[10px] opacity-70 leading-none">from</span>
+            <p className="text-[11px] font-semibold drop-shadow leading-tight">{playerName}</p>
           </div>
         )}
       </div>

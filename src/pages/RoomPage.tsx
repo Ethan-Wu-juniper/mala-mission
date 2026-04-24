@@ -261,6 +261,7 @@ const RoomPage = () => {
       <Shell narrow={false}>
         <VotingView
           submissions={submissions}
+          players={players}
           myUid={user.uid}
           budget={budget}
           myVote={myVote}
