@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { RestaurantCard } from "@/components/features/RestaurantCard";
 import { RestaurantDialog } from "@/components/features/RestaurantDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import type { Player, Submission, Vote } from "@/lib/types";
 
 interface Props {
@@ -38,7 +41,22 @@ export const VotingView = ({
   );
   const [opened, setOpened] = useState<Submission | null>(null);
   const [finalizing, setFinalizing] = useState(false);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [activeIndex, setActiveIndex] = useState(0);
   const initialized = useRef(false);
+  const isMobile = useIsMobile();
+
+  const onSelect = useCallback(() => {
+    if (!carouselApi) return;
+    setActiveIndex(carouselApi.selectedScrollSnap());
+  }, [carouselApi]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    onSelect();
+    carouselApi.on("select", onSelect);
+    return () => { carouselApi.off("select", onSelect); };
+  }, [carouselApi, onSelect]);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -113,24 +131,75 @@ export const VotingView = ({
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center py-8">
-        <div className="w-full overflow-x-auto pb-2">
-          <div className="flex flex-row gap-3 px-6 w-max mx-auto [&>*]:w-80">
-            {submissions.map((sub) => (
-              <RestaurantCard
-                key={sub.playerId}
-                submission={sub}
-                isSelf={sub.playerId === myUid}
-                myPoints={allocations[sub.playerId] ?? 0}
-                maxStars={budget}
-                remaining={remaining}
-                disabled={finalized}
-                playerName={playerMap.get(sub.playerId)?.name}
-                onCardClick={() => setOpened(sub)}
-                onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
-              />
-            ))}
+        {isMobile ? (
+          <>
+            <Carousel
+              opts={{ align: "center", containScroll: false }}
+              setApi={setCarouselApi}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-3">
+                {submissions.map((sub, i) => (
+                  <CarouselItem key={sub.playerId} className="basis-[72%] pl-3">
+                    <div className={cn(
+                      "transition-all duration-300",
+                      i !== activeIndex && "opacity-40 scale-[0.92]",
+                    )}>
+                      <RestaurantCard
+                        submission={sub}
+                        isSelf={sub.playerId === myUid}
+                        myPoints={allocations[sub.playerId] ?? 0}
+                        maxStars={budget}
+                        remaining={remaining}
+                        disabled={finalized}
+                        playerName={playerMap.get(sub.playerId)?.name}
+                        onCardClick={() => setOpened(sub)}
+                        onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+
+            {submissions.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 mt-4">
+                {submissions.map((sub, i) => (
+                  <button
+                    key={sub.playerId}
+                    type="button"
+                    className={cn(
+                      "rounded-full transition-all duration-300",
+                      i === activeIndex
+                        ? "w-2.5 h-2.5 bg-rose-500"
+                        : "w-2 h-2 bg-neutral-300",
+                    )}
+                    onClick={() => carouselApi?.scrollTo(i)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="w-full overflow-x-auto pb-2">
+            <div className="flex flex-row gap-3 px-6 w-max mx-auto [&>*]:w-80">
+              {submissions.map((sub) => (
+                <RestaurantCard
+                  key={sub.playerId}
+                  submission={sub}
+                  isSelf={sub.playerId === myUid}
+                  myPoints={allocations[sub.playerId] ?? 0}
+                  maxStars={budget}
+                  remaining={remaining}
+                  disabled={finalized}
+                  playerName={playerMap.get(sub.playerId)?.name}
+                  onCardClick={() => setOpened(sub)}
+                  onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 px-6 pt-6 pb-5 bg-gradient-to-t from-rose-50 via-rose-50/95 to-transparent pointer-events-none z-20">
