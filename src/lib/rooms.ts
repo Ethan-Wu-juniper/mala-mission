@@ -11,7 +11,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
-import { pickAnimals } from "@/lib/animals";
+import { pickNicknames } from "@/lib/nicknames";
 import type { City, Player, Room, Submission } from "@/lib/types";
 
 const ROOMS = "rooms";
@@ -35,7 +35,7 @@ export async function createRoom(
   if (capacity < 2) throw new Error("人數至少要 2 人");
   const roomId = newId();
   const playerIds = Array.from({ length: capacity }, () => newId());
-  const animals = pickAnimals(capacity);
+  const nicknames = pickNicknames(capacity);
 
   const batch = writeBatch(db);
   batch.set(roomDoc(roomId), {
@@ -48,7 +48,7 @@ export async function createRoom(
   });
   playerIds.forEach((pid, idx) => {
     batch.set(playerDoc(roomId, pid), {
-      name: animals[idx],
+      name: nicknames[idx],
       joinedAt: null,
     });
   });
