@@ -97,11 +97,15 @@ export const ResultsView = ({ submissions, votes, myUid }: Props) => {
         submission={opened}
         isSelf={opened?.playerId === myUid}
         myPoints={0}
+        maxStars={3}
+        remaining={0}
+        disabled
         totalPoints={
           opened
             ? ranked.find((r) => r.submission.playerId === opened.playerId)?.total
             : undefined
         }
+        onSetPoints={() => {}}
         onOpenChange={(open) => !open && setOpened(null)}
       />
     </div>

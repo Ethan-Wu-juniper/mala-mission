@@ -35,7 +35,13 @@ import {
 } from "@/lib/rooms";
 import type { Player, Room, Submission, Vote } from "@/lib/types";
 
-const Shell = ({ children }: { children: React.ReactNode }) => {
+const Shell = ({
+  children,
+  narrow = true,
+}: {
+  children: React.ReactNode;
+  narrow?: boolean;
+}) => {
   const { user, signOut } = useAuth();
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 flex flex-col">
@@ -66,8 +72,12 @@ const Shell = ({ children }: { children: React.ReactNode }) => {
           </Button>
         </div>
       </header>
-      <main className="flex-1 px-6 py-10">
-        <div className="max-w-xl mx-auto">{children}</div>
+      <main className="flex-1">
+        {narrow ? (
+          <div className="max-w-xl mx-auto px-6 py-10">{children}</div>
+        ) : (
+          children
+        )}
       </main>
     </div>
   );
@@ -247,7 +257,7 @@ const RoomPage = () => {
   // Voting phase
   if (allSubmitted && user) {
     return (
-      <Shell>
+      <Shell narrow={false}>
         <VotingView
           submissions={submissions}
           myUid={user.uid}

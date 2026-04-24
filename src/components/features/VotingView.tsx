@@ -72,48 +72,53 @@ export const VotingView = ({
   };
 
   return (
-    <div className="space-y-5 pb-28">
-      <div className="sticky top-0 z-20 -mx-6 px-6 py-3 bg-gradient-to-b from-rose-50 via-rose-50/95 to-rose-50/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-neutral-900">投票</h1>
-            <p className="text-[11px] text-neutral-500 mt-0.5">
-              已投完 {finalizedCount} / {capacity}
-            </p>
+    <div className="min-h-screen flex flex-col pb-28">
+      <div className="sticky top-0 z-20 px-6 py-3 bg-gradient-to-b from-rose-50 via-rose-50/95 to-rose-50/80 backdrop-blur-sm">
+        <div className="max-w-xl mx-auto space-y-1">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-bold text-neutral-900">投票</h1>
+              <p className="text-[11px] text-neutral-500 mt-0.5">
+                已投完 {finalizedCount} / {capacity}
+              </p>
+            </div>
+            <div className="relative flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.4)] ring-2 ring-amber-300/50">
+              <Star
+                className="w-4 h-4 fill-white text-white drop-shadow"
+                strokeWidth={2}
+              />
+              <span className="text-lg font-black text-white leading-none tabular-nums">
+                {remaining}
+              </span>
+              <span className="text-xs font-bold text-white/80 leading-none">
+                /{budget}
+              </span>
+            </div>
           </div>
-          <div className="relative flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.4)] ring-2 ring-amber-300/50">
-            <Star
-              className="w-4 h-4 fill-white text-white drop-shadow"
-              strokeWidth={2}
-            />
-            <span className="text-lg font-black text-white leading-none tabular-nums">
-              {remaining}
-            </span>
-            <span className="text-xs font-bold text-white/80 leading-none">
-              /{budget}
-            </span>
-          </div>
+          <p className="text-xs text-neutral-500 leading-relaxed">
+            點卡片右上角的星星投票，每顆星 1 點。所有點數投完才能送出，不能投給自己。
+          </p>
         </div>
       </div>
 
-      <p className="text-sm text-neutral-600 leading-relaxed">
-        點卡片右上角的星星投票，每顆星 1 點。所有點數投完才能送出，不能投給自己。
-      </p>
-
-      <div className="grid grid-cols-2 gap-3">
-        {submissions.map((sub) => (
-          <RestaurantCard
-            key={sub.playerId}
-            submission={sub}
-            isSelf={sub.playerId === myUid}
-            myPoints={allocations[sub.playerId] ?? 0}
-            maxStars={budget}
-            remaining={remaining}
-            disabled={finalized}
-            onCardClick={() => setOpened(sub)}
-            onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
-          />
-        ))}
+      <div className="flex-1 flex flex-col items-center justify-center py-8">
+        <div className="w-full overflow-x-auto pb-2">
+          <div className="flex flex-row gap-3 px-6 w-max mx-auto [&>*]:w-80">
+            {submissions.map((sub) => (
+              <RestaurantCard
+                key={sub.playerId}
+                submission={sub}
+                isSelf={sub.playerId === myUid}
+                myPoints={allocations[sub.playerId] ?? 0}
+                maxStars={budget}
+                remaining={remaining}
+                disabled={finalized}
+                onCardClick={() => setOpened(sub)}
+                onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 px-6 pt-6 pb-5 bg-gradient-to-t from-rose-50 via-rose-50/95 to-transparent pointer-events-none z-20">
@@ -146,6 +151,12 @@ export const VotingView = ({
         submission={opened}
         isSelf={opened?.playerId === myUid}
         myPoints={opened ? allocations[opened.playerId] ?? 0 : 0}
+        maxStars={budget}
+        remaining={remaining}
+        disabled={finalized}
+        onSetPoints={(p) =>
+          opened ? handleSetPoints(opened.playerId, p) : undefined
+        }
         onOpenChange={(open) => !open && setOpened(null)}
       />
     </div>
