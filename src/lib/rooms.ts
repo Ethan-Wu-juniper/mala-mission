@@ -168,8 +168,7 @@ export async function submitRestaurant(
     city: City;
     restaurantName: string;
     dish: string;
-    reason: string;
-    mapsUrl: string | null;
+    mapsUrl: string;
   },
 ): Promise<void> {
   await setDoc(submissionDoc(roomId, playerId), {

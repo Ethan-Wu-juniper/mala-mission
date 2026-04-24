@@ -4,13 +4,11 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { CITY_LABEL, type City } from "@/lib/types";
 
 export interface RestaurantFormValues {
   restaurantName: string;
   dish: string;
-  reason: string;
   mapsUrl: string;
 }
 
@@ -24,17 +22,16 @@ export const RestaurantForm = ({ city, submitting, onSubmit }: Props) => {
   const [values, setValues] = useState<RestaurantFormValues>({
     restaurantName: "",
     dish: "",
-    reason: "",
     mapsUrl: "",
   });
 
   const update = (key: keyof RestaurantFormValues) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
       setValues((v) => ({ ...v, [key]: e.target.value }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!values.restaurantName.trim() || !values.reason.trim()) return;
+    if (!values.restaurantName.trim() || !values.mapsUrl.trim()) return;
     onSubmit(values);
   };
 
@@ -58,37 +55,25 @@ export const RestaurantForm = ({ city, submitting, onSubmit }: Props) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="dish">推薦菜色</Label>
-        <Input
-          id="dish"
-          value={values.dish}
-          onChange={update("dish")}
-          placeholder="例：麻婆豆腐、夫妻肺片"
-          disabled={submitting}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="reason">推薦理由 *</Label>
-        <Textarea
-          id="reason"
-          value={values.reason}
-          onChange={update("reason")}
-          placeholder="為什麼想去？"
-          rows={4}
-          disabled={submitting}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="mapsUrl">Google Maps 連結（選填）</Label>
+        <Label htmlFor="mapsUrl">Google Maps 連結 *</Label>
         <Input
           id="mapsUrl"
           type="url"
           value={values.mapsUrl}
           onChange={update("mapsUrl")}
           placeholder="https://maps.app.goo.gl/..."
+          disabled={submitting}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="dish">推薦菜色（選填）</Label>
+        <Input
+          id="dish"
+          value={values.dish}
+          onChange={update("dish")}
+          placeholder="例：麻婆豆腐、夫妻肺片"
           disabled={submitting}
         />
       </div>

@@ -149,8 +149,7 @@ const PlayerRoom = () => {
           city: myCity,
           restaurantName: values.restaurantName.trim(),
           dish: values.dish.trim(),
-          reason: values.reason.trim(),
-          mapsUrl: values.mapsUrl.trim() || null,
+          mapsUrl: values.mapsUrl.trim(),
         });
       } catch (err) {
         toast({

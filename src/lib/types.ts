@@ -30,7 +30,6 @@ export interface Submission {
   city: City;
   restaurantName: string;
   dish: string;
-  reason: string;
-  mapsUrl: string | null;
+  mapsUrl: string;
   submittedAt: Timestamp;
 }
