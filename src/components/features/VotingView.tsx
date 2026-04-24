@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, Star } from "lucide-react";
+import { Check, Clock, Loader2, Star } from "lucide-react";
+import { format } from "date-fns";
+import { zhTW } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
@@ -8,6 +10,25 @@ import { RestaurantDialog } from "@/components/features/RestaurantDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import type { Player, Submission, Vote } from "@/lib/types";
+
+function useCountdown(targetIso: string | undefined) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!targetIso) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [targetIso]);
+  if (!targetIso) return null;
+  const diff = new Date(targetIso).getTime() - now;
+  if (diff <= 0) return null;
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if (d > 0) return `${d} 天 ${h} 時 ${m} 分`;
+  if (h > 0) return `${h} 時 ${m} 分 ${s} 秒`;
+  return `${m} 分 ${s} 秒`;
+}
 
 interface Props {
   submissions: Submission[];
@@ -46,17 +67,38 @@ export const VotingView = ({
   const initialized = useRef(false);
   const isMobile = useIsMobile();
 
+  const nextUpIndex = useMemo(() => {
+    const now = Date.now();
+    let closest = -1;
+    let closestTime = Infinity;
+    submissions.forEach((sub, i) => {
+      if (!sub.scheduledAt) return;
+      const t = new Date(sub.scheduledAt).getTime();
+      if (t >= now && t < closestTime) {
+        closest = i;
+        closestTime = t;
+      }
+    });
+    return closest;
+  }, [submissions]);
+
   const onSelect = useCallback(() => {
     if (!carouselApi) return;
     setActiveIndex(carouselApi.selectedScrollSnap());
   }, [carouselApi]);
 
+  const carouselInitialized = useRef(false);
+
   useEffect(() => {
     if (!carouselApi) return;
+    if (!carouselInitialized.current && nextUpIndex >= 0) {
+      carouselApi.scrollTo(nextUpIndex, true);
+      carouselInitialized.current = true;
+    }
     onSelect();
     carouselApi.on("select", onSelect);
     return () => { carouselApi.off("select", onSelect); };
-  }, [carouselApi, onSelect]);
+  }, [carouselApi, onSelect, nextUpIndex]);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -78,6 +120,9 @@ export const VotingView = ({
     [allocations],
   );
   const remaining = budget - used;
+
+  const nextUpSub = nextUpIndex >= 0 ? submissions[nextUpIndex] : null;
+  const countdown = useCountdown(nextUpSub?.scheduledAt);
 
   const handleSetPoints = (recipientUid: string, newPoints: number) => {
     if (newPoints < 0) return;
@@ -129,6 +174,18 @@ export const VotingView = ({
           </p>
         </div>
       </div>
+
+      {nextUpSub && countdown && (
+        <div className="flex items-center justify-center gap-2 py-3 bg-amber-50/80 border-b border-amber-200/60">
+          <Clock className="w-4 h-4 text-amber-600" />
+          <span className="text-sm text-amber-800">
+            <span className="font-semibold">{nextUpSub.restaurantName}</span>
+            {" — "}
+            {format(new Date(nextUpSub.scheduledAt!), "M/d (EEE) HH:mm", { locale: zhTW })}
+            ，還有 <span className="font-bold tabular-nums">{countdown}</span>
+          </span>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col items-center justify-center py-8">
         {isMobile ? (
@@ -183,19 +240,26 @@ export const VotingView = ({
         ) : (
           <div className="w-full overflow-x-auto pb-2">
             <div className="flex flex-row gap-3 px-6 w-max mx-auto [&>*]:w-80">
-              {submissions.map((sub) => (
-                <RestaurantCard
+              {submissions.map((sub, i) => (
+                <div
                   key={sub.playerId}
-                  submission={sub}
-                  isSelf={sub.playerId === myUid}
-                  myPoints={allocations[sub.playerId] ?? 0}
-                  maxStars={budget}
-                  remaining={remaining}
-                  disabled={finalized}
-                  playerName={playerMap.get(sub.playerId)?.name}
-                  onCardClick={() => setOpened(sub)}
-                  onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
-                />
+                  className={cn(
+                    "rounded-2xl transition-shadow duration-300",
+                    i === nextUpIndex && "ring-2 ring-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.35)]",
+                  )}
+                >
+                  <RestaurantCard
+                    submission={sub}
+                    isSelf={sub.playerId === myUid}
+                    myPoints={allocations[sub.playerId] ?? 0}
+                    maxStars={budget}
+                    remaining={remaining}
+                    disabled={finalized}
+                    playerName={playerMap.get(sub.playerId)?.name}
+                    onCardClick={() => setOpened(sub)}
+                    onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
+                  />
+                </div>
               ))}
             </div>
           </div>
