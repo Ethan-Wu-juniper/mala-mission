@@ -18,20 +18,57 @@ interface Props {
   onSubmit: (values: RestaurantFormValues) => void;
 }
 
+const MAPS_DOMAINS = [
+  "maps.app.goo.gl",
+  "goo.gl",
+  "maps.google.com",
+  "www.google.com",
+  "google.com",
+];
+
+function validateMapsUrl(raw: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return "請輸入有效的網址";
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return "請輸入有效的網址";
+  }
+  const isGoogleMaps =
+    MAPS_DOMAINS.some((d) => url.hostname === d) &&
+    (url.hostname !== "www.google.com" && url.hostname !== "google.com"
+      ? true
+      : url.pathname.startsWith("/maps"));
+  if (!isGoogleMaps) {
+    return "請輸入 Google Maps 連結";
+  }
+  return null;
+}
+
 export const RestaurantForm = ({ city, submitting, onSubmit }: Props) => {
   const [values, setValues] = useState<RestaurantFormValues>({
     restaurantName: "",
     dish: "",
     mapsUrl: "",
   });
+  const [mapsError, setMapsError] = useState<string | null>(null);
 
   const update = (key: keyof RestaurantFormValues) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setValues((v) => ({ ...v, [key]: e.target.value }));
+      if (key === "mapsUrl") setMapsError(null);
+    };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!values.restaurantName.trim() || !values.mapsUrl.trim()) return;
+    if (!values.restaurantName.trim()) return;
+    const urlError = validateMapsUrl(values.mapsUrl.trim());
+    if (urlError) {
+      setMapsError(urlError);
+      return;
+    }
     onSubmit(values);
   };
 
@@ -58,13 +95,15 @@ export const RestaurantForm = ({ city, submitting, onSubmit }: Props) => {
         <Label htmlFor="mapsUrl">Google Maps 連結 *</Label>
         <Input
           id="mapsUrl"
-          type="url"
           value={values.mapsUrl}
           onChange={update("mapsUrl")}
           placeholder="https://maps.app.goo.gl/..."
           disabled={submitting}
-          required
+          className={mapsError ? "border-rose-500 focus-visible:ring-rose-500" : ""}
         />
+        {mapsError && (
+          <p className="text-xs text-rose-500">{mapsError}</p>
+        )}
       </div>
 
       <div className="space-y-2">

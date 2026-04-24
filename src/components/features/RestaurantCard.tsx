@@ -2,6 +2,7 @@ import { ExternalLink, Flame, Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CITY_LABEL, type Submission } from "@/lib/types";
+import { useMapImage } from "@/hooks/use-map-image";
 
 interface Props {
   submission: Submission;
@@ -31,6 +32,9 @@ export const RestaurantCard = ({
     ? "from-rose-600 via-red-600 to-orange-600"
     : "from-amber-600 via-orange-700 to-rose-800";
 
+  const fetchedImage = useMapImage(submission.mapsUrl || undefined);
+  const hasImage = !!fetchedImage;
+
   const showStars = !isSelf && totalPoints === undefined;
   const showTotal = totalPoints !== undefined;
 
@@ -50,15 +54,27 @@ export const RestaurantCard = ({
     <div
       className={cn(
         "relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer",
-        "bg-gradient-to-br text-white transition-transform duration-200",
-        "hover:-translate-y-1",
-        gradient,
+        "text-white transition-transform duration-200 hover:-translate-y-1",
+        !hasImage && `bg-gradient-to-br ${gradient}`,
         isSelf && "opacity-80",
       )}
       onClick={onCardClick}
     >
-      <div className="absolute inset-3 rounded-xl border border-white/20 pointer-events-none" />
+      {hasImage && (
+        <img
+          src={fetchedImage!}
+          alt={submission.restaurantName}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
+      {hasImage && (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/30" />
+      )}
+      {!hasImage && (
+        <div className="absolute inset-3 rounded-xl border border-white/20 pointer-events-none" />
+      )}
 
+      {/* top row: city badge + stars/total/self */}
       <div className="absolute top-3 left-3 right-3 z-10 flex items-start justify-between gap-2">
         <div className="px-2 py-0.5 rounded-full bg-black/25 backdrop-blur-sm">
           <span className="text-[10px] font-bold tracking-[0.25em] text-white">
@@ -117,24 +133,29 @@ export const RestaurantCard = ({
         )}
       </div>
 
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-5 pt-8 pb-10 text-center">
-        <Flame className="w-9 h-9 mb-3 drop-shadow-lg opacity-90 shrink-0" />
-        <h3 className="font-bold text-lg leading-tight drop-shadow-md line-clamp-3">
+      {!hasImage && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Flame className="w-9 h-9 drop-shadow-lg opacity-90" />
+        </div>
+      )}
+
+      {/* bottom-left: name + dish + maps */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-4 pt-6">
+        <h3 className="font-bold text-base leading-tight drop-shadow-md line-clamp-2">
           {submission.restaurantName}
         </h3>
         {submission.dish && (
-          <p className="text-xs opacity-85 drop-shadow line-clamp-2 leading-relaxed mt-2">
+          <p className="text-xs opacity-85 drop-shadow line-clamp-1 leading-relaxed mt-1">
             {submission.dish}
           </p>
         )}
+        {submission.mapsUrl && (
+          <div className="flex items-center gap-1 mt-2 text-[10px] tracking-widest opacity-70">
+            <ExternalLink className="w-2.5 h-2.5" />
+            <span>MAPS</span>
+          </div>
+        )}
       </div>
-
-      {submission.mapsUrl && (
-        <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-1 text-[10px] tracking-widest opacity-70">
-          <ExternalLink className="w-2.5 h-2.5" />
-          <span>MAPS</span>
-        </div>
-      )}
     </div>
   );
 };

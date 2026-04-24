@@ -70,7 +70,7 @@ const Index = () => {
     }
     setCreating(true);
     try {
-      const { roomId } = await createRoom(capacity, user.uid);
+      const { roomId } = await createRoom(capacity, user.uid, user.photoURL);
       navigate(`/room/${roomId}`);
     } catch (err) {
       toast({

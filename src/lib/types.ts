@@ -23,6 +23,7 @@ export interface Room {
 export interface Player {
   id: string;
   name: string | null;
+  photoURL: string | null;
   joinedAt: Timestamp | null;
 }
 

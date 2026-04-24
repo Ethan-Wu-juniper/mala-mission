@@ -59,6 +59,7 @@ function buildAssignments(uids: string[]): Record<string, City> {
 export async function createRoom(
   capacity: number,
   hostUid: string,
+  hostPhotoURL?: string | null,
 ): Promise<{ roomId: string }> {
   if (capacity < 2) throw new Error("人數至少要 2 人");
   const roomId = newId();
@@ -77,6 +78,7 @@ export async function createRoom(
     tx.set(playerDoc(roomId, hostUid), {
       uid: hostUid,
       name: nicknames[0],
+      photoURL: hostPhotoURL ?? null,
       joinedAt: serverTimestamp(),
     });
   });
@@ -84,7 +86,7 @@ export async function createRoom(
   return { roomId };
 }
 
-export async function joinRoom(roomId: string, uid: string): Promise<void> {
+export async function joinRoom(roomId: string, uid: string, photoURL?: string | null): Promise<void> {
   await runTransaction(db, async (tx) => {
     const playerRef = playerDoc(roomId, uid);
     const roomRef = roomDoc(roomId);
@@ -105,6 +107,7 @@ export async function joinRoom(roomId: string, uid: string): Promise<void> {
     tx.set(playerRef, {
       uid,
       name: nickname,
+      photoURL: photoURL ?? null,
       joinedAt: serverTimestamp(),
     });
 

@@ -167,7 +167,7 @@ const RoomPage = () => {
     if (!user || !roomId) return;
     setJoining(true);
     try {
-      await joinRoom(roomId, user.uid);
+      await joinRoom(roomId, user.uid, user.photoURL);
     } catch (err) {
       toast({
         title: "加入失敗",
@@ -248,6 +248,7 @@ const RoomPage = () => {
         <ResultsView
           submissions={submissions}
           votes={votes}
+          players={players}
           myUid={user.uid}
         />
       </Shell>
