@@ -204,27 +204,33 @@ export const VotingView = ({
 
       <div className="fixed bottom-0 left-0 right-0 px-6 pt-6 pb-5 bg-gradient-to-t from-rose-50 via-rose-50/95 to-transparent pointer-events-none z-20">
         <div className="max-w-xl mx-auto pointer-events-auto">
-          <Button
-            className="w-full h-12 bg-rose-600 hover:bg-rose-700 shadow-lg text-base font-semibold"
-            onClick={handleFinalize}
-            disabled={finalizing || finalized || remaining > 0}
-          >
-            {finalizing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                送出中...
-              </>
-            ) : finalized ? (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                已投完，等其他人
-              </>
-            ) : remaining > 0 ? (
-              `還有 ${remaining} 點沒投`
-            ) : (
-              "投完了"
-            )}
-          </Button>
+          {finalized ? (
+            <Button
+              variant="outline"
+              className="w-full h-12 shadow-lg text-base font-semibold border-rose-200"
+              onClick={() => void onUpdateVote(allocations)}
+            >
+              <Check className="w-4 h-4 mr-2 text-emerald-600" />
+              已確認，點此反悔
+            </Button>
+          ) : (
+            <Button
+              className="w-full h-12 bg-rose-600 hover:bg-rose-700 shadow-lg text-base font-semibold"
+              onClick={handleFinalize}
+              disabled={finalizing || remaining > 0}
+            >
+              {finalizing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  送出中...
+                </>
+              ) : remaining > 0 ? (
+                `還有 ${remaining} 點沒投`
+              ) : (
+                "確認送出"
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
