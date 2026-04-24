@@ -15,11 +15,12 @@ import {
 
 import { db } from "@/lib/firebase";
 import { pickNicknames } from "@/lib/nicknames";
-import type { City, Player, Room, Submission } from "@/lib/types";
+import type { City, Player, Room, Submission, Vote } from "@/lib/types";
 
 const ROOMS = "rooms";
 const PLAYERS = "players";
 const SUBMISSIONS = "submissions";
+const VOTES = "votes";
 
 const roomDoc = (roomId: string) => doc(db, ROOMS, roomId);
 const playersCol = (roomId: string) => collection(db, ROOMS, roomId, PLAYERS);
@@ -29,6 +30,9 @@ const submissionDoc = (roomId: string, uid: string) =>
   doc(db, ROOMS, roomId, SUBMISSIONS, uid);
 const submissionsCol = (roomId: string) =>
   collection(db, ROOMS, roomId, SUBMISSIONS);
+const votesCol = (roomId: string) => collection(db, ROOMS, roomId, VOTES);
+const voteDoc = (roomId: string, uid: string) =>
+  doc(db, ROOMS, roomId, VOTES, uid);
 
 const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 
@@ -194,5 +198,40 @@ export async function submitRestaurant(
   await setDoc(submissionDoc(roomId, uid), {
     ...payload,
     submittedAt: serverTimestamp(),
+  });
+}
+
+export function subscribeVotes(
+  roomId: string,
+  cb: (votes: Vote[]) => void,
+): Unsubscribe {
+  return onSnapshot(votesCol(roomId), (snap) => {
+    cb(snap.docs.map((d) => d.data() as Vote));
+  });
+}
+
+export async function setMyVote(
+  roomId: string,
+  voterUid: string,
+  allocations: Record<string, number>,
+): Promise<void> {
+  await setDoc(voteDoc(roomId, voterUid), {
+    voterUid,
+    allocations,
+    finalized: false,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function finalizeVote(
+  roomId: string,
+  voterUid: string,
+  allocations: Record<string, number>,
+): Promise<void> {
+  await setDoc(voteDoc(roomId, voterUid), {
+    voterUid,
+    allocations,
+    finalized: true,
+    updatedAt: serverTimestamp(),
   });
 }

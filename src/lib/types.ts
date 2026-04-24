@@ -34,3 +34,10 @@ export interface Submission {
   mapsUrl: string;
   submittedAt: Timestamp;
 }
+
+export interface Vote {
+  voterUid: string;
+  allocations: Record<string, number>;
+  finalized: boolean;
+  updatedAt: Timestamp;
+}

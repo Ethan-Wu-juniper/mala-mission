@@ -64,8 +64,8 @@ const Index = () => {
 
   const handleCreate = async () => {
     if (!user) return;
-    if (capacity < 2 || capacity > 20) {
-      toast({ title: "人數請填 2 ~ 20 之間", variant: "destructive" });
+    if (capacity < 2 || capacity > 12) {
+      toast({ title: "人數請填 2 ~ 12 之間", variant: "destructive" });
       return;
     }
     setCreating(true);
@@ -125,7 +125,7 @@ const Index = () => {
                 id="capacity"
                 type="number"
                 min={2}
-                max={20}
+                max={12}
                 value={capacity}
                 onChange={(e) => setCapacity(Number(e.target.value))}
                 disabled={creating}

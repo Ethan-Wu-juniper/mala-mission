@@ -17,18 +17,23 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { CityCard } from "@/components/features/CityCard";
+import { VotingView } from "@/components/features/VotingView";
+import { ResultsView } from "@/components/features/ResultsView";
 import {
   RestaurantForm,
   type RestaurantFormValues,
 } from "@/components/forms/RestaurantForm";
 import {
+  finalizeVote,
   joinRoom,
+  setMyVote,
   submitRestaurant,
   subscribePlayers,
   subscribeRoom,
   subscribeSubmissions,
+  subscribeVotes,
 } from "@/lib/rooms";
-import type { Player, Room, Submission } from "@/lib/types";
+import type { Player, Room, Submission, Vote } from "@/lib/types";
 
 const Shell = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
@@ -62,7 +67,7 @@ const Shell = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
       <main className="flex-1 px-6 py-10">
-        <div className="max-w-md mx-auto">{children}</div>
+        <div className="max-w-xl mx-auto">{children}</div>
       </main>
     </div>
   );
@@ -81,6 +86,15 @@ const CenterMessage = ({
   </div>
 );
 
+const NicknameBadge = ({ name }: { name: string }) => (
+  <div className="text-center space-y-2">
+    <div className="text-xs text-neutral-500">你是</div>
+    <Badge className="text-sm px-3 py-1 bg-rose-600 hover:bg-rose-600">
+      {name}
+    </Badge>
+  </div>
+);
+
 const RoomPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const { user } = useAuth();
@@ -89,6 +103,7 @@ const RoomPage = () => {
   const [room, setRoom] = useState<Room | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [votes, setVotes] = useState<Vote[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [joining, setJoining] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -104,10 +119,12 @@ const RoomPage = () => {
     });
     const unsubPlayers = subscribePlayers(roomId, setPlayers);
     const unsubSubs = subscribeSubmissions(roomId, setSubmissions);
+    const unsubVotes = subscribeVotes(roomId, setVotes);
     return () => {
       unsubRoom();
       unsubPlayers();
       unsubSubs();
+      unsubVotes();
     };
   }, [roomId]);
 
@@ -119,9 +136,16 @@ const RoomPage = () => {
     () => submissions.find((s) => s.playerId === user?.uid) ?? null,
     [submissions, user?.uid],
   );
+  const myVote = useMemo(
+    () => votes.find((v) => v.voterUid === user?.uid) ?? null,
+    [votes, user?.uid],
+  );
   const joinedCount = room?.joinedUids.length ?? 0;
   const isFull = room ? joinedCount >= room.capacity : false;
   const myCity = room?.assignments?.[user?.uid ?? ""] ?? null;
+  const allSubmitted = room ? submissions.length >= room.capacity : false;
+  const finalizedVotes = votes.filter((v) => v.finalized);
+  const allFinalized = room ? finalizedVotes.length >= room.capacity : false;
 
   const copyShareLink = async () => {
     await navigator.clipboard.writeText(window.location.href);
@@ -163,7 +187,6 @@ const RoomPage = () => {
     );
   }
 
-  // Not joined yet
   if (!me) {
     if (isFull) {
       return (
@@ -172,7 +195,6 @@ const RoomPage = () => {
         </Shell>
       );
     }
-    // auto-join once on first visit if there's room
     if (!autoJoined.current && !joining) {
       autoJoined.current = true;
       handleJoin();
@@ -207,30 +229,55 @@ const RoomPage = () => {
   }
 
   const nickname = me.name ?? "";
+  const budget = 3;
 
-  // Already submitted
+  // Results phase
+  if (allSubmitted && allFinalized && user) {
+    return (
+      <Shell>
+        <ResultsView
+          submissions={submissions}
+          votes={votes}
+          myUid={user.uid}
+        />
+      </Shell>
+    );
+  }
+
+  // Voting phase
+  if (allSubmitted && user) {
+    return (
+      <Shell>
+        <VotingView
+          submissions={submissions}
+          myUid={user.uid}
+          budget={budget}
+          myVote={myVote}
+          finalizedCount={finalizedVotes.length}
+          capacity={room.capacity}
+          onUpdateVote={(a) => setMyVote(roomId!, user.uid, a)}
+          onFinalize={(a) => finalizeVote(roomId!, user.uid, a)}
+        />
+      </Shell>
+    );
+  }
+
+  // I submitted, waiting for others
   if (mySubmission) {
     return (
       <Shell>
         <div className="py-10 space-y-8 text-center">
-          <div className="space-y-2">
-            <div className="text-xs text-neutral-500">你是</div>
-            <Badge className="text-sm px-3 py-1 bg-rose-600 hover:bg-rose-600">
-              {nickname}
-            </Badge>
-          </div>
+          <NicknameBadge name={nickname} />
           <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto" />
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-neutral-900">
-              已提交，感謝你！
-            </h1>
+            <h1 className="text-xl font-bold text-neutral-900">已提交餐廳</h1>
             <p className="text-sm text-neutral-600">
               你推薦了《{mySubmission.restaurantName}》
             </p>
           </div>
           <Separator />
           <div className="text-sm text-neutral-500">
-            目前 {submissions.length} / {room.capacity} 人已提交
+            等其他人提交... {submissions.length} / {room.capacity}
           </div>
         </div>
       </Shell>
@@ -263,13 +310,7 @@ const RoomPage = () => {
     return (
       <Shell>
         <div className="py-6 space-y-8">
-          <div className="text-center space-y-2">
-            <div className="text-xs text-neutral-500">你是</div>
-            <Badge className="text-sm px-3 py-1 bg-rose-600 hover:bg-rose-600">
-              {nickname}
-            </Badge>
-          </div>
-
+          <NicknameBadge name={nickname} />
           {!revealed ? (
             <div className="space-y-4">
               <div className="text-center text-sm text-neutral-600">
@@ -289,16 +330,11 @@ const RoomPage = () => {
     );
   }
 
-  // Joined, waiting for others
+  // Joined, waiting for others to join
   return (
     <Shell>
       <div className="py-10 space-y-10">
-        <div className="text-center space-y-2">
-          <div className="text-xs text-neutral-500">你是</div>
-          <Badge className="text-sm px-3 py-1 bg-rose-600 hover:bg-rose-600">
-            {nickname}
-          </Badge>
-        </div>
+        <NicknameBadge name={nickname} />
 
         <div className="text-center space-y-2">
           <div className="text-5xl font-bold text-rose-600">
