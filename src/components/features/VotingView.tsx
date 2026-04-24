@@ -10,24 +10,28 @@ interface Props {
   submissions: Submission[];
   players: Player[];
   myUid: string;
+  hostUid: string;
   budget: number;
   myVote: Vote | null;
   finalizedCount: number;
   capacity: number;
   onUpdateVote: (allocations: Record<string, number>) => Promise<void>;
   onFinalize: (allocations: Record<string, number>) => Promise<void>;
+  onScheduleSet: (playerId: string, isoString: string) => Promise<void>;
 }
 
 export const VotingView = ({
   submissions,
   players,
   myUid,
+  hostUid,
   budget,
   myVote,
   finalizedCount,
   capacity,
   onUpdateVote,
   onFinalize,
+  onScheduleSet,
 }: Props) => {
   const [allocations, setAllocations] = useState<Record<string, number>>(
     myVote?.allocations ?? {},
@@ -162,10 +166,12 @@ export const VotingView = ({
         maxStars={budget}
         remaining={remaining}
         disabled={finalized}
+        isHost={myUid === hostUid}
         onSetPoints={(p) =>
           opened ? handleSetPoints(opened.playerId, p) : undefined
         }
         onOpenChange={(open) => !open && setOpened(null)}
+        onScheduleSet={onScheduleSet}
       />
     </div>
   );

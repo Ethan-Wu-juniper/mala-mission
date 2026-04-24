@@ -10,6 +10,8 @@ interface Props {
   votes: Vote[];
   players: Player[];
   myUid: string;
+  hostUid: string;
+  onScheduleSet: (playerId: string, isoString: string) => Promise<void>;
 }
 
 interface RankedEntry {
@@ -107,7 +109,7 @@ const PodiumBlock = ({
   </div>
 );
 
-export const ResultsView = ({ submissions, votes, players, myUid }: Props) => {
+export const ResultsView = ({ submissions, votes, players, myUid, hostUid, onScheduleSet }: Props) => {
   const [opened, setOpened] = useState<Submission | null>(null);
 
   const ranked = useMemo<RankedEntry[]>(() => {
@@ -223,8 +225,10 @@ export const ResultsView = ({ submissions, votes, players, myUid }: Props) => {
         remaining={0}
         disabled
         totalPoints={openedRanked?.total}
+        isHost={myUid === hostUid}
         onSetPoints={() => {}}
         onOpenChange={(open) => !open && setOpened(null)}
+        onScheduleSet={onScheduleSet}
       />
     </div>
   );

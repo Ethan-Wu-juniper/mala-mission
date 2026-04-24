@@ -34,6 +34,7 @@ export interface Submission {
   dish: string;
   mapsUrl: string;
   submittedAt: Timestamp;
+  scheduledAt?: string;
 }
 
 export interface Vote {

@@ -1,6 +1,7 @@
 import {
   collection,
   collectionGroup,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -9,6 +10,7 @@ import {
   runTransaction,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -237,4 +239,26 @@ export async function finalizeVote(
     finalized: true,
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function deleteRoom(roomId: string, uid: string): Promise<void> {
+  const snap = await getDoc(roomDoc(roomId));
+  if (!snap.exists()) return;
+  const room = snap.data() as Omit<Room, "id">;
+  if (room.hostUid !== uid) throw new Error("只有房主可以刪除房間");
+
+  const subcollections = [PLAYERS, SUBMISSIONS, VOTES] as const;
+  for (const sub of subcollections) {
+    const colSnap = await getDocs(collection(db, ROOMS, roomId, sub));
+    await Promise.all(colSnap.docs.map((d) => deleteDoc(d.ref)));
+  }
+  await deleteDoc(roomDoc(roomId));
+}
+
+export async function setSchedule(
+  roomId: string,
+  playerId: string,
+  scheduledAt: string,
+): Promise<void> {
+  await updateDoc(submissionDoc(roomId, playerId), { scheduledAt });
 }

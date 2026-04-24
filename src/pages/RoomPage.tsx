@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Check,
@@ -8,6 +8,7 @@ import {
   Flame,
   Loader2,
   LogOut,
+  Trash2,
   UserPlus,
 } from "lucide-react";
 
@@ -24,9 +25,11 @@ import {
   type RestaurantFormValues,
 } from "@/components/forms/RestaurantForm";
 import {
+  deleteRoom,
   finalizeVote,
   joinRoom,
   setMyVote,
+  setSchedule,
   submitRestaurant,
   subscribePlayers,
   subscribeRoom,
@@ -109,6 +112,7 @@ const RoomPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [room, setRoom] = useState<Room | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -156,6 +160,27 @@ const RoomPage = () => {
   const allSubmitted = room ? submissions.length >= room.capacity : false;
   const finalizedVotes = votes.filter((v) => v.finalized);
   const allFinalized = room ? finalizedVotes.length >= room.capacity : false;
+  const isHost = room ? user?.uid === room.hostUid : false;
+
+  const handleDeleteRoom = async () => {
+    if (!roomId || !user) return;
+    if (!window.confirm("確定要刪除這個房間嗎？所有資料都會消失。")) return;
+    try {
+      await deleteRoom(roomId, user.uid);
+      navigate("/");
+    } catch (err) {
+      toast({
+        title: "刪除失敗",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleScheduleSet = async (playerId: string, isoString: string) => {
+    if (!roomId) return;
+    await setSchedule(roomId, playerId, isoString);
+  };
 
   const copyShareLink = async () => {
     await navigator.clipboard.writeText(window.location.href);
@@ -250,6 +275,8 @@ const RoomPage = () => {
           votes={votes}
           players={players}
           myUid={user.uid}
+          hostUid={room.hostUid}
+          onScheduleSet={handleScheduleSet}
         />
       </Shell>
     );
@@ -263,12 +290,14 @@ const RoomPage = () => {
           submissions={submissions}
           players={players}
           myUid={user.uid}
+          hostUid={room.hostUid}
           budget={budget}
           myVote={myVote}
           finalizedCount={finalizedVotes.length}
           capacity={room.capacity}
           onUpdateVote={(a) => setMyVote(roomId!, user.uid, a)}
           onFinalize={(a) => finalizeVote(roomId!, user.uid, a)}
+          onScheduleSet={handleScheduleSet}
         />
       </Shell>
     );
@@ -395,6 +424,20 @@ const RoomPage = () => {
                 ))}
               </div>
             </div>
+          </>
+        )}
+
+        {isHost && (
+          <>
+            <Separator />
+            <Button
+              variant="outline"
+              className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+              onClick={handleDeleteRoom}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              刪除房間
+            </Button>
           </>
         )}
       </div>
