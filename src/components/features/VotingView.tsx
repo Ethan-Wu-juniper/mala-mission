@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { RestaurantCard } from "@/components/features/RestaurantCard";
 import { RestaurantDialog } from "@/components/features/RestaurantDialog";
 import type { Submission, Vote } from "@/lib/types";
@@ -35,7 +34,6 @@ export const VotingView = ({
   const [finalizing, setFinalizing] = useState(false);
   const initialized = useRef(false);
 
-  // Hydrate local state from remote once
   useEffect(() => {
     if (initialized.current) return;
     if (myVote) {
@@ -52,15 +50,16 @@ export const VotingView = ({
   );
   const remaining = budget - used;
 
-  const handleDelta = (recipientUid: string, delta: number) => {
+  const handleSetPoints = (recipientUid: string, newPoints: number) => {
+    if (newPoints < 0) return;
     const current = allocations[recipientUid] ?? 0;
-    const next = current + delta;
-    if (next < 0) return;
-    if (delta > 0 && remaining <= 0) return;
-    const newAllocations = { ...allocations, [recipientUid]: next };
-    if (next === 0) delete newAllocations[recipientUid];
-    setAllocations(newAllocations);
-    void onUpdateVote(newAllocations);
+    const delta = newPoints - current;
+    if (delta > remaining) return;
+    const next = { ...allocations };
+    if (newPoints === 0) delete next[recipientUid];
+    else next[recipientUid] = newPoints;
+    setAllocations(next);
+    void onUpdateVote(next);
   };
 
   const handleFinalize = async () => {
@@ -73,71 +72,75 @@ export const VotingView = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-neutral-900">投票</h1>
-        <p className="text-sm text-neutral-600 leading-relaxed">
-          你有 <span className="font-bold text-rose-600">{budget}</span>{" "}
-          點，<span className="font-semibold text-neutral-900">必須全部用完</span>才能送出。可以全壓一間、也可以分散。不能投給自己。
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 border border-neutral-200">
-        <div className="space-y-0.5">
-          <div className="text-xs text-neutral-500">剩餘點數</div>
-          <div className="text-2xl font-bold text-rose-600">{remaining}</div>
-        </div>
-        <div className="space-y-0.5 text-right">
-          <div className="text-xs text-neutral-500">已投完</div>
-          <div className="text-sm font-semibold text-neutral-700">
-            {finalizedCount} / {capacity}
+    <div className="space-y-5 pb-28">
+      <div className="sticky top-0 z-20 -mx-6 px-6 py-3 bg-gradient-to-b from-rose-50 via-rose-50/95 to-rose-50/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900">投票</h1>
+            <p className="text-[11px] text-neutral-500 mt-0.5">
+              已投完 {finalizedCount} / {capacity}
+            </p>
+          </div>
+          <div className="relative flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.4)] ring-2 ring-amber-300/50">
+            <Star
+              className="w-4 h-4 fill-white text-white drop-shadow"
+              strokeWidth={2}
+            />
+            <span className="text-lg font-black text-white leading-none tabular-nums">
+              {remaining}
+            </span>
+            <span className="text-xs font-bold text-white/80 leading-none">
+              /{budget}
+            </span>
           </div>
         </div>
       </div>
 
-      <Separator />
+      <p className="text-sm text-neutral-600 leading-relaxed">
+        點卡片右上角的星星投票，每顆星 1 點。所有點數投完才能送出，不能投給自己。
+      </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {submissions.map((sub) => {
-          const isSelf = sub.playerId === myUid;
-          const myPoints = allocations[sub.playerId] ?? 0;
-          return (
-            <RestaurantCard
-              key={sub.playerId}
-              submission={sub}
-              isSelf={isSelf}
-              myPoints={myPoints}
-              canIncrement={remaining > 0}
-              disabled={finalized}
-              onCardClick={() => setOpened(sub)}
-              onIncrement={() => handleDelta(sub.playerId, +1)}
-              onDecrement={() => handleDelta(sub.playerId, -1)}
-            />
-          );
-        })}
+      <div className="grid grid-cols-2 gap-3">
+        {submissions.map((sub) => (
+          <RestaurantCard
+            key={sub.playerId}
+            submission={sub}
+            isSelf={sub.playerId === myUid}
+            myPoints={allocations[sub.playerId] ?? 0}
+            maxStars={budget}
+            remaining={remaining}
+            disabled={finalized}
+            onCardClick={() => setOpened(sub)}
+            onSetPoints={(p) => handleSetPoints(sub.playerId, p)}
+          />
+        ))}
       </div>
 
-      <Button
-        className="w-full h-11 bg-rose-600 hover:bg-rose-700"
-        onClick={handleFinalize}
-        disabled={finalizing || finalized || remaining > 0}
-      >
-        {finalizing ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            送出中...
-          </>
-        ) : finalized ? (
-          <>
-            <Check className="w-4 h-4 mr-2" />
-            已投完，等其他人
-          </>
-        ) : remaining > 0 ? (
-          `還有 ${remaining} 點沒投`
-        ) : (
-          "投完了"
-        )}
-      </Button>
+      <div className="fixed bottom-0 left-0 right-0 px-6 pt-6 pb-5 bg-gradient-to-t from-rose-50 via-rose-50/95 to-transparent pointer-events-none z-20">
+        <div className="max-w-xl mx-auto pointer-events-auto">
+          <Button
+            className="w-full h-12 bg-rose-600 hover:bg-rose-700 shadow-lg text-base font-semibold"
+            onClick={handleFinalize}
+            disabled={finalizing || finalized || remaining > 0}
+          >
+            {finalizing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                送出中...
+              </>
+            ) : finalized ? (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                已投完，等其他人
+              </>
+            ) : remaining > 0 ? (
+              `還有 ${remaining} 點沒投`
+            ) : (
+              "投完了"
+            )}
+          </Button>
+        </div>
+      </div>
 
       <RestaurantDialog
         submission={opened}

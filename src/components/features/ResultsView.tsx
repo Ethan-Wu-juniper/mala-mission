@@ -81,12 +81,12 @@ export const ResultsView = ({ submissions, votes, myUid }: Props) => {
                 submission={submission}
                 isSelf={submission.playerId === myUid}
                 myPoints={0}
-                canIncrement={false}
+                maxStars={3}
+                remaining={0}
                 disabled
                 totalPoints={total}
                 onCardClick={() => setOpened(submission)}
-                onIncrement={() => {}}
-                onDecrement={() => {}}
+                onSetPoints={() => {}}
               />
             </div>
           );

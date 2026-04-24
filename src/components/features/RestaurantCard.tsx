@@ -1,7 +1,5 @@
-import { ExternalLink, Minus, Plus, Star } from "lucide-react";
+import { ExternalLink, Flame, Star } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CITY_LABEL, type Submission } from "@/lib/types";
 
@@ -9,126 +7,148 @@ interface Props {
   submission: Submission;
   isSelf: boolean;
   myPoints: number;
-  canIncrement: boolean;
+  maxStars: number;
+  remaining: number;
   disabled: boolean;
   totalPoints?: number;
   onCardClick: () => void;
-  onIncrement: () => void;
-  onDecrement: () => void;
+  onSetPoints: (points: number) => void;
 }
 
 export const RestaurantCard = ({
   submission,
   isSelf,
   myPoints,
-  canIncrement,
+  maxStars,
+  remaining,
   disabled,
   totalPoints,
   onCardClick,
-  onIncrement,
-  onDecrement,
+  onSetPoints,
 }: Props) => {
-  const cityClasses =
-    submission.city === "sichuan"
-      ? "border-rose-300 bg-rose-50/80"
-      : "border-amber-300 bg-amber-50/80";
+  const isSichuan = submission.city === "sichuan";
+  const bannerGradient = isSichuan
+    ? "from-rose-500 via-red-600 to-orange-500"
+    : "from-amber-500 via-orange-600 to-rose-700";
+
+  const showStarRating = !isSelf && totalPoints === undefined;
+  const showTotalBadge = totalPoints !== undefined;
+
+  const handleStarClick = (pos: number) => {
+    if (disabled || isSelf) return;
+    let nextPoints: number;
+    if (pos === myPoints) {
+      nextPoints = pos - 1;
+    } else if (pos < myPoints) {
+      nextPoints = pos;
+    } else {
+      const delta = pos - myPoints;
+      nextPoints = delta > remaining ? myPoints + remaining : pos;
+    }
+    if (nextPoints !== myPoints) onSetPoints(nextPoints);
+  };
 
   return (
     <div
       className={cn(
-        "relative rounded-xl border p-4 transition cursor-pointer hover:shadow-md",
-        cityClasses,
-        isSelf && "opacity-70",
+        "relative rounded-2xl overflow-hidden shadow-lg cursor-pointer transition-transform duration-200 hover:-translate-y-1 hover:shadow-2xl",
+        "ring-1 ring-black/5",
+        isSelf && "opacity-80",
       )}
       onClick={onCardClick}
     >
-      {myPoints > 0 && (
-        <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-full px-2 py-0.5">
-          {Array.from({ length: myPoints }).map((_, i) => (
-            <Star
-              key={i}
-              className="w-3 h-3 fill-amber-500 text-amber-500"
-            />
-          ))}
+      {/* banner */}
+      <div
+        className={cn(
+          "relative aspect-[5/2] bg-gradient-to-br text-white",
+          bannerGradient,
+        )}
+      >
+        <div className="absolute inset-0 flex items-center justify-center opacity-20">
+          <Flame className="w-20 h-20 text-white" />
         </div>
-      )}
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3), transparent 50%)",
+          }}
+        />
 
-      {totalPoints !== undefined && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 bg-white rounded-full px-2.5 py-1 shadow-sm">
-          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-          <span className="text-xs font-bold text-neutral-900">
-            {totalPoints}
+        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/20 backdrop-blur-sm">
+          <span className="text-[11px] font-bold tracking-[0.2em] text-white">
+            {CITY_LABEL[submission.city]}
           </span>
         </div>
-      )}
 
-      <div className="space-y-3 pr-4">
-        <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className={cn(
-              "text-[10px] px-2 py-0",
-              submission.city === "sichuan"
-                ? "border-rose-400 text-rose-700"
-                : "border-amber-600 text-amber-700",
-            )}
+        {showStarRating && (
+          <div
+            className="absolute top-1.5 right-1.5 flex items-center gap-0.5 p-1 rounded-full bg-black/25 backdrop-blur-sm"
+            onClick={(e) => e.stopPropagation()}
           >
-            {CITY_LABEL[submission.city]}
-          </Badge>
-          {isSelf && (
-            <Badge variant="secondary" className="text-[10px] px-2 py-0">
-              你的
-            </Badge>
-          )}
-        </div>
+            {Array.from({ length: maxStars }).map((_, i) => {
+              const pos = i + 1;
+              const filled = pos <= myPoints;
+              const canClick =
+                !disabled && (filled || remaining >= 1 || pos <= myPoints);
+              return (
+                <button
+                  key={pos}
+                  type="button"
+                  className={cn(
+                    "p-0.5 transition-all duration-150 active:scale-90",
+                    canClick
+                      ? "hover:scale-125 cursor-pointer"
+                      : "opacity-40 cursor-not-allowed",
+                  )}
+                  onClick={() => canClick && handleStarClick(pos)}
+                  disabled={!canClick}
+                >
+                  <Star
+                    className={cn(
+                      "w-4 h-4 transition-all duration-200",
+                      filled
+                        ? "fill-amber-300 text-amber-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.8)]"
+                        : "text-white/70",
+                    )}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-        <div className="space-y-1">
-          <h3 className="font-bold text-neutral-900 leading-snug">
-            {submission.restaurantName}
-          </h3>
-          {submission.dish && (
-            <p className="text-xs text-neutral-600 line-clamp-2">
-              {submission.dish}
-            </p>
-          )}
-        </div>
+        {showTotalBadge && (
+          <div className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm shadow">
+            <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+            <span className="text-xs font-bold text-white">{totalPoints}</span>
+          </div>
+        )}
 
-        {submission.mapsUrl && (
-          <div className="flex items-center gap-1 text-xs text-neutral-500">
-            <ExternalLink className="w-3 h-3" />
-            <span className="truncate">Maps</span>
+        {isSelf && (
+          <div className="absolute top-2 right-2 px-2.5 py-1 rounded-full bg-white/25 backdrop-blur-sm">
+            <span className="text-[11px] font-semibold text-white">你的</span>
           </div>
         )}
       </div>
 
-      {!isSelf && totalPoints === undefined && (
-        <div
-          className="mt-3 flex items-center justify-between gap-2 pt-3 border-t border-neutral-200/60"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-7 w-7"
-            onClick={onDecrement}
-            disabled={disabled || myPoints === 0}
-          >
-            <Minus className="w-3 h-3" />
-          </Button>
-          <span className="text-sm font-semibold text-neutral-700 min-w-[3ch] text-center">
-            {myPoints}
-          </span>
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-7 w-7"
-            onClick={onIncrement}
-            disabled={disabled || !canIncrement}
-          >
-            <Plus className="w-3 h-3" />
-          </Button>
-        </div>
-      )}
+      {/* content */}
+      <div className="bg-white p-4 space-y-2 min-h-[110px]">
+        <h3 className="font-bold text-neutral-900 leading-tight text-base line-clamp-2">
+          {submission.restaurantName}
+        </h3>
+        {submission.dish && (
+          <p className="text-xs text-neutral-600 line-clamp-2">
+            {submission.dish}
+          </p>
+        )}
+        {submission.mapsUrl && (
+          <div className="flex items-center gap-1 text-[11px] text-neutral-500 pt-0.5">
+            <ExternalLink className="w-3 h-3" />
+            <span>查看地圖</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
