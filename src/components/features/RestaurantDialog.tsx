@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarPlus, ExternalLink, CalendarIcon, Check } from "lucide-react";
 import { format } from "date-fns";
 import { zhTW } from "date-fns/locale";
@@ -43,7 +43,7 @@ function buildGoogleCalendarUrl(submission: Submission): string {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-const MINUTES = ["00", "15", "30", "45"];
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
 const iconBtnClass =
   "w-11 h-11 rounded-full bg-white shadow-lg flex items-center justify-center transition hover:shadow-xl hover:scale-105 active:scale-95";
@@ -62,29 +62,43 @@ export const RestaurantDialog = ({
   onScheduleSet,
 }: Props) => {
   const [scheduleOpen, setScheduleOpen] = useState(false);
-
-  const parsed = submission?.scheduledAt ? new Date(submission.scheduledAt) : null;
-  const [date, setDate] = useState<Date | undefined>(parsed ?? undefined);
-  const [hour, setHour] = useState(parsed ? String(parsed.getHours()).padStart(2, "0") : "12");
-  const [minute, setMinute] = useState(parsed ? String(Math.floor(parsed.getMinutes() / 15) * 15).padStart(2, "0") : "00");
-
-  const calendarUrl = useMemo(
-    () => (submission?.scheduledAt ? buildGoogleCalendarUrl(submission) : null),
-    [submission],
+  const [localSchedule, setLocalSchedule] = useState<string | undefined>(
+    submission?.scheduledAt,
   );
 
-  const hasSchedule = !!submission?.scheduledAt;
+  const effectiveSchedule = localSchedule ?? submission?.scheduledAt;
+  const parsed = effectiveSchedule ? new Date(effectiveSchedule) : null;
+  const [date, setDate] = useState<Date | undefined>(parsed ?? undefined);
+  const [hour, setHour] = useState(parsed ? String(parsed.getHours()).padStart(2, "0") : "12");
+  const [minute, setMinute] = useState(parsed ? String(parsed.getMinutes()).padStart(2, "0") : "00");
+
+  useEffect(() => {
+    setLocalSchedule(submission?.scheduledAt);
+    const p = submission?.scheduledAt ? new Date(submission.scheduledAt) : null;
+    setDate(p ?? undefined);
+    setHour(p ? String(p.getHours()).padStart(2, "0") : "12");
+    setMinute(p ? String(p.getMinutes()).padStart(2, "0") : "00");
+  }, [submission?.scheduledAt, submission?.playerId]);
+
+  const calendarUrl = useMemo(
+    () => (effectiveSchedule ? buildGoogleCalendarUrl({ ...submission!, scheduledAt: effectiveSchedule }) : null),
+    [effectiveSchedule, submission],
+  );
+
+  const hasSchedule = !!effectiveSchedule;
 
   const handleScheduleConfirm = () => {
     if (!date || !submission || !onScheduleSet) return;
     const d = new Date(date);
     d.setHours(Number(hour), Number(minute), 0, 0);
-    onScheduleSet(submission.playerId, d.toISOString());
+    const iso = d.toISOString();
+    setLocalSchedule(iso);
+    onScheduleSet(submission.playerId, iso);
     setScheduleOpen(false);
   };
 
   const scheduleLabel = hasSchedule
-    ? format(new Date(submission!.scheduledAt!), "M/d (EEE) HH:mm", { locale: zhTW })
+    ? format(new Date(effectiveSchedule!), "M/d (EEE) HH:mm", { locale: zhTW })
     : "尚未設定時間";
 
   return (
@@ -149,30 +163,30 @@ export const RestaurantDialog = ({
                         disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
                         initialFocus
                       />
-                      <div className="flex items-center gap-2 px-3 pb-2">
+                      <div className="flex items-center gap-1 px-3 pb-3">
                         <Select value={hour} onValueChange={setHour}>
-                          <SelectTrigger className="w-[72px]">
+                          <SelectTrigger className="w-14 h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             {HOURS.map((h) => (
-                              <SelectItem key={h} value={h}>{h} 時</SelectItem>
+                              <SelectItem key={h} value={h}>{h}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <span className="text-neutral-400 font-bold">:</span>
+                        <span className="text-xs text-neutral-400 font-bold">:</span>
                         <Select value={minute} onValueChange={setMinute}>
-                          <SelectTrigger className="w-[72px]">
+                          <SelectTrigger className="w-14 h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             {MINUTES.map((m) => (
-                              <SelectItem key={m} value={m}>{m} 分</SelectItem>
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button size="sm" className="ml-auto" onClick={handleScheduleConfirm} disabled={!date}>
-                          <Check className="w-4 h-4 mr-1" />
+                        <Button size="sm" className="ml-auto h-8 px-2.5 text-xs" onClick={handleScheduleConfirm} disabled={!date}>
+                          <Check className="w-3.5 h-3.5 mr-1" />
                           確認
                         </Button>
                       </div>
