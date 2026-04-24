@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flame, Sparkles } from "lucide-react";
+import { ArrowRight, Flame, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -7,16 +7,19 @@ import { CITY_LABEL, type City } from "@/lib/types";
 
 interface Props {
   city: City;
-  onRevealed?: () => void;
+  onContinue?: () => void;
 }
 
-export const CityCard = ({ city, onRevealed }: Props) => {
+const FLIP_MS = 1600;
+
+export const CityCard = ({ city, onContinue }: Props) => {
   const [flipped, setFlipped] = useState(false);
+  const [flipDone, setFlipDone] = useState(false);
 
   const handleFlip = () => {
     if (flipped) return;
     setFlipped(true);
-    setTimeout(() => onRevealed?.(), 700);
+    setTimeout(() => setFlipDone(true), FLIP_MS);
   };
 
   const cityClasses =
@@ -27,15 +30,19 @@ export const CityCard = ({ city, onRevealed }: Props) => {
   return (
     <div className="flex flex-col items-center gap-6">
       <div
-        className="relative w-64 h-96 cursor-pointer"
+        className={cn(
+          "relative w-64 h-96",
+          !flipped && "cursor-pointer hover:scale-[1.02] transition-transform",
+        )}
         style={{ perspective: "1200px" }}
         onClick={handleFlip}
       >
         <div
-          className="relative w-full h-full transition-transform duration-700"
+          className="relative w-full h-full"
           style={{
             transformStyle: "preserve-3d",
             transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            transition: `transform ${FLIP_MS}ms cubic-bezier(0.45, 0, 0.2, 1)`,
           }}
         >
           <div
@@ -78,12 +85,13 @@ export const CityCard = ({ city, onRevealed }: Props) => {
         </div>
       </div>
 
-      {!flipped && (
+      {flipDone && (
         <Button
-          onClick={handleFlip}
-          className="bg-amber-600 hover:bg-amber-700"
+          onClick={onContinue}
+          className="bg-rose-600 hover:bg-rose-700 animate-in fade-in duration-500"
         >
-          翻牌揭曉城市
+          填寫推薦餐廳
+          <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       )}
     </div>

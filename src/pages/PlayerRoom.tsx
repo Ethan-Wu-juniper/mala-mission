@@ -173,7 +173,7 @@ const PlayerRoom = () => {
                 <div className="text-center text-sm text-neutral-600">
                   全員到齊，點擊卡牌揭曉你的城市
                 </div>
-                <CityCard city={myCity} onRevealed={() => setRevealed(true)} />
+                <CityCard city={myCity} onContinue={() => setRevealed(true)} />
               </div>
             ) : (
               <RestaurantForm
