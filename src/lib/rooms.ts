@@ -1,11 +1,15 @@
 import {
   collection,
+  collectionGroup,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
+  query,
   runTransaction,
   serverTimestamp,
   setDoc,
+  where,
   type Unsubscribe,
 } from "firebase/firestore";
 
@@ -67,6 +71,7 @@ export async function createRoom(
       createdAt: serverTimestamp(),
     });
     tx.set(playerDoc(roomId, hostUid), {
+      uid: hostUid,
       name: nicknames[0],
       joinedAt: serverTimestamp(),
     });
@@ -94,6 +99,7 @@ export async function joinRoom(roomId: string, uid: string): Promise<void> {
     const nickname = room.nicknames[newUids.length - 1];
 
     tx.set(playerRef, {
+      uid,
       name: nickname,
       joinedAt: serverTimestamp(),
     });
@@ -152,6 +158,27 @@ export async function getPlayer(
   const snap = await getDoc(playerDoc(roomId, uid));
   if (!snap.exists()) return null;
   return { id: snap.id, ...(snap.data() as Omit<Player, "id">) };
+}
+
+export async function listMyRooms(uid: string): Promise<Room[]> {
+  const playerSnap = await getDocs(
+    query(collectionGroup(db, PLAYERS), where("uid", "==", uid)),
+  );
+  const roomIds = playerSnap.docs
+    .map((d) => d.ref.parent.parent?.id)
+    .filter((id): id is string => Boolean(id));
+
+  const roomSnaps = await Promise.all(
+    roomIds.map((id) => getDoc(roomDoc(id))),
+  );
+  return roomSnaps
+    .filter((s) => s.exists())
+    .map((s) => ({ id: s.id, ...(s.data() as Omit<Room, "id">) }))
+    .sort((a, b) => {
+      const at = a.createdAt?.toMillis?.() ?? 0;
+      const bt = b.createdAt?.toMillis?.() ?? 0;
+      return bt - at;
+    });
 }
 
 export async function submitRestaurant(
