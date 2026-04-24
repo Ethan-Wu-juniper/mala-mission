@@ -14,6 +14,8 @@ export interface Room {
   capacity: number;
   status: RoomStatus;
   assignments: Record<string, City> | null;
+  playerIds: string[];
+  joinedCount: number;
   createdAt: Timestamp;
 }
 

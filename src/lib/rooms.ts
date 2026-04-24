@@ -2,7 +2,6 @@ import {
   collection,
   doc,
   getDoc,
-  getDocs,
   onSnapshot,
   runTransaction,
   serverTimestamp,
@@ -12,6 +11,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { pickAnimals } from "@/lib/animals";
 import type { City, Player, Room, Submission } from "@/lib/types";
 
 const ROOMS = "rooms";
@@ -35,20 +35,23 @@ export async function createRoom(
   if (capacity < 2) throw new Error("人數至少要 2 人");
   const roomId = newId();
   const playerIds = Array.from({ length: capacity }, () => newId());
+  const animals = pickAnimals(capacity);
 
   const batch = writeBatch(db);
   batch.set(roomDoc(roomId), {
     capacity,
     status: "waiting",
     assignments: null,
+    playerIds,
+    joinedCount: 0,
     createdAt: serverTimestamp(),
   });
-  for (const pid of playerIds) {
+  playerIds.forEach((pid, idx) => {
     batch.set(playerDoc(roomId, pid), {
-      name: null,
+      name: animals[idx],
       joinedAt: null,
     });
-  }
+  });
   await batch.commit();
   return { roomId, playerIds };
 }
@@ -100,18 +103,6 @@ export async function getPlayer(
   return { id: snap.id, ...(snap.data() as Omit<Player, "id">) };
 }
 
-export async function joinPlayer(
-  roomId: string,
-  playerId: string,
-  name: string,
-): Promise<void> {
-  await setDoc(
-    playerDoc(roomId, playerId),
-    { name: name.trim(), joinedAt: serverTimestamp() },
-    { merge: true },
-  );
-}
-
 function buildAssignments(
   playerIds: string[],
 ): Record<string, City> {
@@ -134,22 +125,39 @@ function buildAssignments(
   return result;
 }
 
-export async function drawCards(roomId: string): Promise<void> {
-  const playersSnap = await getDocs(playersCol(roomId));
-  const players = playersSnap.docs.map((d) => ({
-    id: d.id,
-    ...(d.data() as Omit<Player, "id">),
-  }));
-  const allJoined = players.every((p) => p.joinedAt && p.name);
-  if (!allJoined) throw new Error("還有人沒加入");
-
+export async function joinPlayer(
+  roomId: string,
+  playerId: string,
+): Promise<void> {
   await runTransaction(db, async (tx) => {
-    const roomSnap = await tx.get(roomDoc(roomId));
+    const playerRef = playerDoc(roomId, playerId);
+    const roomRef = roomDoc(roomId);
+
+    const playerSnap = await tx.get(playerRef);
+    const roomSnap = await tx.get(roomRef);
+
+    if (!playerSnap.exists()) throw new Error("玩家不存在");
     if (!roomSnap.exists()) throw new Error("房間不存在");
-    const data = roomSnap.data() as Omit<Room, "id">;
-    if (data.status === "drawn") return;
-    const assignments = buildAssignments(players.map((p) => p.id));
-    tx.update(roomDoc(roomId), { status: "drawn", assignments });
+
+    const player = playerSnap.data() as Omit<Player, "id">;
+    if (player.joinedAt) return;
+
+    const room = roomSnap.data() as Omit<Room, "id">;
+    const newJoinedCount = (room.joinedCount ?? 0) + 1;
+
+    tx.update(playerRef, { joinedAt: serverTimestamp() });
+
+    const roomUpdates: Record<string, unknown> = {
+      joinedCount: newJoinedCount,
+    };
+    if (
+      newJoinedCount === room.capacity &&
+      room.status === "waiting"
+    ) {
+      roomUpdates.status = "drawn";
+      roomUpdates.assignments = buildAssignments(room.playerIds);
+    }
+    tx.update(roomRef, roomUpdates);
   });
 }
 

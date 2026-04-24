@@ -1,11 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { CheckCircle2, Flame, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { CityCard } from "@/components/features/CityCard";
@@ -14,7 +11,6 @@ import {
   type RestaurantFormValues,
 } from "@/components/forms/RestaurantForm";
 import {
-  drawCards,
   joinPlayer,
   submitRestaurant,
   subscribePlayers,
@@ -29,6 +25,15 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
+const NicknameHeader = ({ name }: { name: string }) => (
+  <div className="flex items-center justify-center gap-2">
+    <span className="text-xs text-neutral-500">你是</span>
+    <Badge className="text-sm px-3 py-1 bg-rose-600 hover:bg-rose-600">
+      {name}
+    </Badge>
+  </div>
+);
+
 const PlayerRoom = () => {
   const { roomId, playerId } = useParams<{
     roomId: string;
@@ -40,12 +45,9 @@ const PlayerRoom = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loaded, setLoaded] = useState(false);
-
-  const [name, setName] = useState("");
-  const [joining, setJoining] = useState(false);
-  const [drawing, setDrawing] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const joinTriggered = useRef(false);
 
   useEffect(() => {
     if (!roomId) return;
@@ -70,9 +72,21 @@ const PlayerRoom = () => {
     () => submissions.find((s) => s.playerId === playerId) ?? null,
     [submissions, playerId],
   );
-  const joinedCount = players.filter((p) => p.joinedAt).length;
-  const allJoined = room ? joinedCount === room.capacity : false;
-  const myCity = room?.assignments?.[playerId ?? ""] ?? null;
+
+  useEffect(() => {
+    if (!roomId || !playerId) return;
+    if (!me || me.joinedAt) return;
+    if (joinTriggered.current) return;
+    joinTriggered.current = true;
+    joinPlayer(roomId, playerId).catch((err) => {
+      joinTriggered.current = false;
+      toast({
+        title: "加入失敗",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    });
+  }, [roomId, playerId, me, toast]);
 
   if (!roomId || !playerId) return null;
 
@@ -101,87 +115,24 @@ const PlayerRoom = () => {
     );
   }
 
-  // Step 1: not joined yet → name entry
-  if (!me.joinedAt || !me.name) {
-    const handleJoin = async () => {
-      if (!name.trim()) {
-        toast({ title: "請輸入名字", variant: "destructive" });
-        return;
-      }
-      setJoining(true);
-      try {
-        await joinPlayer(roomId, playerId, name);
-      } catch (err) {
-        toast({
-          title: "加入失敗",
-          description: err instanceof Error ? err.message : String(err),
-          variant: "destructive",
-        });
-      } finally {
-        setJoining(false);
-      }
-    };
+  const nickname = me.name ?? "";
+  const myCity = room.assignments?.[playerId] ?? null;
+  const joinedCount = room.joinedCount ?? 0;
 
-    return (
-      <Shell>
-        <Card className="border-rose-200 shadow-xl">
-          <CardContent className="p-8 space-y-6">
-            <div className="text-center space-y-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-rose-600 to-orange-600 rounded-2xl flex items-center justify-center mx-auto">
-                <Flame className="w-7 h-7 text-white" />
-              </div>
-              <h1 className="text-xl font-bold">加入麻辣任務</h1>
-              <p className="text-sm text-neutral-600">
-                輸入你的名字，等所有人到齊後就可以抽卡
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="name">你的名字</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="例：小明"
-                disabled={joining}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleJoin();
-                }}
-              />
-            </div>
-            <Button
-              className="w-full bg-rose-600 hover:bg-rose-700"
-              onClick={handleJoin}
-              disabled={joining}
-            >
-              {joining ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  加入中...
-                </>
-              ) : (
-                "加入房間"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      </Shell>
-    );
-  }
-
-  // Step 4: already submitted
+  // Submitted → done
   if (mySubmission) {
-    const submittedCount = submissions.length;
     return (
       <Shell>
         <Card className="border-emerald-200 shadow-xl">
           <CardContent className="p-8 text-center space-y-4">
+            <NicknameHeader name={nickname} />
             <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto" />
             <h1 className="text-xl font-bold">已提交，感謝你！</h1>
             <p className="text-sm text-neutral-600">
               你推薦了《{mySubmission.restaurantName}》
             </p>
             <Badge variant="secondary">
-              目前 {submittedCount} / {room.capacity} 人已提交
+              目前 {submissions.length} / {room.capacity} 人已提交
             </Badge>
           </CardContent>
         </Card>
@@ -189,7 +140,7 @@ const PlayerRoom = () => {
     );
   }
 
-  // Step 3: drawn → flip card → form
+  // Drawn → flip card → form
   if (room.status === "drawn" && myCity) {
     const handleSubmit = async (values: RestaurantFormValues) => {
       setSubmitting(true);
@@ -216,10 +167,11 @@ const PlayerRoom = () => {
       <Shell>
         <Card className="border-rose-200 shadow-xl">
           <CardContent className="p-8 space-y-6">
+            <NicknameHeader name={nickname} />
             {!revealed ? (
               <div className="space-y-4">
                 <div className="text-center text-sm text-neutral-600">
-                  點擊卡牌揭曉你的城市
+                  全員到齊，點擊卡牌揭曉你的城市
                 </div>
                 <CityCard city={myCity} onRevealed={() => setRevealed(true)} />
               </div>
@@ -236,60 +188,21 @@ const PlayerRoom = () => {
     );
   }
 
-  // Step 2: joined, waiting for others / draw
-  const handleDraw = async () => {
-    setDrawing(true);
-    try {
-      await drawCards(roomId);
-    } catch (err) {
-      toast({
-        title: "抽卡失敗",
-        description: err instanceof Error ? err.message : String(err),
-        variant: "destructive",
-      });
-    } finally {
-      setDrawing(false);
-    }
-  };
-
+  // Joined, waiting for others
   return (
     <Shell>
       <Card className="border-rose-200 shadow-xl">
         <CardContent className="p-8 space-y-6 text-center">
-          <div className="space-y-2">
-            <div className="w-14 h-14 bg-gradient-to-br from-rose-600 to-orange-600 rounded-2xl flex items-center justify-center mx-auto">
-              <Flame className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-xl font-bold">嗨，{me.name}！</h1>
-          </div>
-
+          <NicknameHeader name={nickname} />
           <div className="space-y-2">
             <div className="text-3xl font-bold text-rose-600">
               {joinedCount} / {room.capacity}
             </div>
             <div className="text-sm text-neutral-500">人已加入</div>
           </div>
-
-          {allJoined ? (
-            <Button
-              className="w-full bg-amber-600 hover:bg-amber-700"
-              onClick={handleDraw}
-              disabled={drawing}
-            >
-              {drawing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  抽卡中...
-                </>
-              ) : (
-                "開始抽卡"
-              )}
-            </Button>
-          ) : (
-            <div className="text-sm text-neutral-500">
-              等待其他人加入，這個頁面會即時更新
-            </div>
-          )}
+          <div className="text-sm text-neutral-500">
+            等待其他人加入，滿員後會自動抽卡
+          </div>
         </CardContent>
       </Card>
     </Shell>

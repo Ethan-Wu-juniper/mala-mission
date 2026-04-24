@@ -130,9 +130,6 @@ const RoomHost = () => {
                   全部複製
                 </Button>
               </div>
-              <p className="text-xs text-neutral-500">
-                把每條 URL 分別發給一位參與者。換裝置只要重新打開這條網址即可。
-              </p>
 
               <ul className="space-y-2">
                 {players.map((p, idx) => {
