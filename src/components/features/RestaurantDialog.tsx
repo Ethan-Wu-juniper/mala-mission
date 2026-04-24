@@ -29,7 +29,7 @@ export const RestaurantDialog = ({
 }: Props) => {
   return (
     <Dialog open={!!submission} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[320px] sm:max-w-[340px] p-0 bg-transparent border-0 shadow-none gap-0">
+      <DialogContent className="max-w-[320px] sm:max-w-[340px] p-0 bg-transparent border-0 shadow-none gap-0 [&>button]:hidden">
         {submission && (
           <div className="space-y-3">
             <RestaurantCard
