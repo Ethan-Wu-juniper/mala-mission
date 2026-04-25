@@ -57,7 +57,8 @@
 點擊卡片可以打開詳細資訊，查看 Google Maps 位置。
 
 ![投票](docs/guide/06-vote.png)
-![手機上投票](docs/guide/06-vote-mobile.png)
+
+<img src="docs/guide/06-vote-mobile.png" alt="手機上投票" width="300">
 
 ---
 
