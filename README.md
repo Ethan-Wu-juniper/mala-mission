@@ -84,7 +84,7 @@
 
 房主可以在卡片詳情中，點擊日曆按鈕為每間餐廳設定用餐日期和時間。設定後所有人都能看到倒計時。
 
-![排程](docs/guide/9-schedule.png)
+![排程](docs/guide/09-schedule.png)
 
 ---
 
