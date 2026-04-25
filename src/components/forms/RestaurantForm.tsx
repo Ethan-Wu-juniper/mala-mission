@@ -64,31 +64,18 @@ interface Props {
   onSubmit: (values: RestaurantFormValues) => void;
 }
 
-const MAPS_DOMAINS = [
-  "maps.app.goo.gl",
-  "goo.gl",
-  "maps.google.com",
-  "www.google.com",
-  "google.com",
-];
-
 function validateMapsUrl(raw: string): string | null {
   let url: URL;
   try {
     url = new URL(raw);
   } catch {
-    return "請輸入有效的網址";
+    return "請貼上 Google Maps 分享連結（https://maps.app.goo.gl/...）";
   }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    return "請輸入有效的網址";
+  if (url.protocol !== "https:") {
+    return "請貼上 Google Maps 分享連結（https://maps.app.goo.gl/...）";
   }
-  const isGoogleMaps =
-    MAPS_DOMAINS.some((d) => url.hostname === d) &&
-    (url.hostname !== "www.google.com" && url.hostname !== "google.com"
-      ? true
-      : url.pathname.startsWith("/maps"));
-  if (!isGoogleMaps) {
-    return "請輸入 Google Maps 連結";
+  if (url.hostname !== "maps.app.goo.gl") {
+    return "請貼上 Google Maps 分享連結（https://maps.app.goo.gl/...）";
   }
   return null;
 }
