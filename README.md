@@ -1,179 +1,108 @@
-# Lovable Boilerplate
+# 麻辣任務 — 玩家使用教學
 
-> **Reverse-engineered Lovable AI app builder** turned into a developer-friendly React boilerplate with comprehensive AI coding assistant instructions.
+朋友們被隨機分到「四川」或「重慶」，各自挑一間當地餐廳推薦，最後投票決定去哪間吃！
 
-[![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue.svg)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.4.1-purple.svg)](https://vitejs.dev/)
-[![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-components-black.svg)](https://ui.shadcn.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.11-cyan.svg)](https://tailwindcss.com/)
+---
 
-## One-Click Setup
-[![Edit with Bolt](https://img.shields.io/badge/Edit%20with-Bolt-4285F4?style=for-the-badge&logo=stackblitz&logoColor=white)](https://bolt.new/~/github.com/chihebnabil/lovable-boilerplate)
-[![Edit with Replit](https://img.shields.io/badge/Edit%20with-Replit-4285F4?style=for-the-badge&logo=replit&logoColor=white)](https://replit.com/@ChihebNabil/lovable-boilerplate)
-## What is this?
+## 1. 登入
 
-This boilerplate **reverse-engineers** the magic behind [Lovable's](https://lovable.dev) no-code AI app builder into a traditional React codebase that developers can understand, modify, and extend. It bridges the gap between no-code AI generation and developer control.
+用 Google 帳號登入即可開始使用。
 
-> **💡 Built something with Lovable or using this boilerplate?**  
-> Upgrade to a fullstack Next.js app in minutes with [**NextLovable.com**](https://nextlovable.com/)  
-> Get production-ready performance, better SEO, and full control.
+![登入畫面](docs/guide/01-login.png)
 
+---
 
+## 2. 建立房間
 
-## Tech Stack
+輸入房間標題（例如「週五聚餐」）和參與人數（2～12 人），點擊「建立房間」。
 
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| **React** | UI Library | 18.3.1 |
-| **TypeScript** | Type Safety | 5.5.3 |
-| **Vite** | Build Tool | 5.4.1 |
-| **shadcn/ui** | Component Library | Latest |
-| **Tailwind CSS** | Styling | 3.4.11 |
-| **React Router** | Navigation | 6.26.2 |
-| **TanStack Query** | Data Fetching | 5.56.2 |
-| **React Hook Form** | Form Handling | 7.53.0 |
-| **Zod** | Schema Validation | 3.23.8 |
+![建立房間](docs/guide/02-create-room.png)
 
+---
 
+## 3. 邀請朋友
 
-### Prerequisites
-- Node.js 18+ or Bun
-- Git
+建好房間後會看到邀請連結，複製連結傳給朋友，他們登入後即可加入。
 
-### Installation
+![邀請朋友](docs/guide/03-invite.png)
 
-```bash
-# Clone the repository
-git clone https://github.com/chihebnabil/lovable-boilerplate.git
-cd lovable-boilerplate
+---
 
-# Install dependencies (npm, yarn, or bun)
-npm install
-# or
-bun install
+## 4. 等待滿員
 
-# Start development server
-npm run dev
-# or
-bun dev
-```
+等所有人都加入後，系統會自動幫每個人抽一張城市卡（四川或重慶）。
 
-Your app will be running at `http://localhost:8080`
+![等待中](docs/guide/04-waiting.png)
 
-## AI Coding Assistant Instructions
+---
 
-This boilerplate is **optimized for AI coding assistants** like GitHub Copilot and Cursor. All comprehensive instructions are located in:
+## 5. 翻卡揭曉城市
 
-**`.github/instructions/global.instructions.md`**
+點擊卡牌翻面，看看你被分到哪個城市！
 
-These instructions include:
-- **Modern Design Guidelines** - Create premium, contemporary interfaces
-- **Architecture Patterns** - Project structure and best practices  
-- **Component Usage** - How to use shadcn/ui components effectively
-- **Development Workflow** - Adding features, pages, and functionality
-- **Styling System** - Color palettes, spacing, typography, and animations
-- **Responsive Design** - Mobile-first development principles
+![翻卡](docs/guide/05-flip-card.png)
 
-### For AI Assistants (Copilot/Cursor users):
-Simply reference the instructions file when working on this project. The AI will understand the project structure, styling guidelines, and development patterns automatically.
+---
 
-## Project Structure
+## 6. 提交餐廳
 
-```
-lovable-boilerplate/
-├── .github/
-│   └── instructions/           # AI coding assistant instructions
-│       └── global.instructions.md
-├── src/
-│   ├── components/ui/          # shadcn/ui components (40+ pre-built)
-│   ├── hooks/                  # Custom React hooks
-│   ├── lib/                    # Utility functions
-│   ├── pages/                  # Route components
-│   │   ├── Index.tsx           # Home page (/)
-│   │   └── NotFound.tsx        # 404 page
-│   ├── App.tsx                 # Main app with routing
-│   ├── main.tsx                # Entry point
-│   └── index.css               # Global styles
-├── public/                     # Static assets
-├── package.json                # Dependencies
-├── vite.config.ts              # Vite configuration  
-├── tailwind.config.ts          # Tailwind configuration
-├── components.json             # shadcn/ui configuration
-└── tsconfig.json               # TypeScript configuration
-```
+在你被分到的城市範圍內，找一間餐廳推薦給大家。填寫餐廳名稱、Google Maps 連結，以及推薦菜色（選填）。
 
-## Available Components
+> 不知道怎麼取得 Google Maps 連結？點擊輸入框旁邊的 **?** 按鈕，裡面有圖文教學。
 
-### UI Components (40+ ready-to-use)
-All components are pre-configured with shadcn/ui and located in `src/components/ui/`:
+![提交餐廳](docs/guide/06-submit.png)
 
-**Layout & Navigation**
-- `accordion`, `card`, `separator`, `sheet`, `sidebar`, `tabs`
-- `breadcrumb`, `command`, `dropdown-menu`, `menubar`, `navigation-menu`, `pagination`
+---
 
-**Forms & Inputs** 
-- `button`, `input`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `form`
-- `calendar`, `input-otp`, `slider`, `toggle`
+## 7. 投票
 
-**Feedback & Overlays**
-- `alert`, `alert-dialog`, `toast`, `sonner`, `progress`, `skeleton`
-- `dialog`, `drawer`, `hover-card`, `popover`, `tooltip`
+所有人都提交後進入投票階段。你有固定的星星點數，分配給你想去的餐廳（不能投給自己）。
 
-**Data Display**
-- `avatar`, `badge`, `table`, `chart`, `carousel`
-- `aspect-ratio`, `collapsible`, `resizable`, `scroll-area`
+- **手機**：左右滑動切換卡片，點右上角星星投票
+- **電腦**：橫向排列所有卡片，直接點星星
 
+點擊卡片可以打開詳細資訊，查看 Google Maps 位置。
 
-### Layout Principles
-- **Generous Spacing**: `py-16 lg:py-24` for sections
-- **Consistent Rhythm**: `space-y-4 lg:space-y-6` for content
-- **Responsive First**: Mobile-first responsive design
-- **Typography Scale**: Hierarchical text sizing
+![投票](docs/guide/07-vote.png)
 
-## Development Commands
+---
 
-```bash
-# Development
-npm run dev          # Start dev server (port 8080)
-npm run build        # Production build  
-npm run build:dev    # Development build
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
+## 8. 確認投票
 
-# Using Bun (faster alternative)
-bun dev             # Start dev server
-bun run build       # Production build
-```
+把所有點數分配完畢後，點擊「確認送出」。
 
+**投錯了？** 沒關係，確認後還可以點「已確認，點此反悔」重新分配。所有人同時確認後才會結算。
 
-## What Makes This Special?
+![確認投票](docs/guide/08-confirm.png)
 
-1. **Reverse-Engineered**: Based on patterns from Lovable's AI app builder
-2. **AI-Optimized**: Designed specifically for AI coding assistants
-3. **Design-First**: Premium visual design out of the box
-4. **Performance**: Lightning-fast development and build times
-5. **Flexible**: Easy to customize and extend
-6. **Modern**: Latest React patterns and best practices
+---
 
-## Contributing
+## 9. 投票結果
 
-We welcome contributions! This project aims to provide the best possible starting point for AI-assisted React development.
+所有人確認後，進入頒獎台畫面，按照得票數排列名次。點擊頭像可以查看該餐廳的詳細資訊。
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+![投票結果](docs/guide/09-results.png)
 
-## License
+---
 
-MIT License - feel free to use this for any project!
+## 10. 排程用餐時間（房主限定）
 
-## Acknowledgments
+房主可以在卡片詳情中，點擊日曆按鈕為每間餐廳設定用餐日期和時間。設定後所有人都能看到倒計時。
 
-- **Lovable.dev** - Inspiration for the AI-first development approach
-- **shadcn/ui** - Excellent component library and design system
-- **Vercel** - Amazing tooling ecosystem (React, Vite, etc.)
-- **Tailwind Labs** - Revolutionary CSS framework
+![排程](docs/guide/10-schedule.png)
 
-**Happy coding!**
+---
+
+## 11. 加到 Google 日曆
+
+設定用餐時間後，所有人都可以點擊日曆按鈕，一鍵將用餐資訊加到自己的 Google 日曆。
+
+![加到日曆](docs/guide/11-calendar.png)
+
+---
+
+## 12. 刪除房間（房主限定）
+
+房主可以在等待頁面底部找到「刪除房間」按鈕，刪除後所有資料會永久消失。
+
+![刪除房間](docs/guide/12-delete.png)
