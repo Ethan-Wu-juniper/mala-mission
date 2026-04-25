@@ -1,10 +1,56 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { HelpCircle, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CITY_LABEL, type City } from "@/lib/types";
+
+const HELP_STEPS = [
+  { tab: "1", title: "找到地點", description: "打開 Google Maps，搜尋並找到該餐廳的地點。" },
+  { tab: "2", title: "點擊分享", description: "點擊餐廳資訊面板上的「分享」按鈕。" },
+  { tab: "3", title: "複製連結", description: "在彈出的分享選單中，點擊「複製連結」即可。" },
+] as const;
+
+const MapsHelpDialog = () => (
+  <Dialog>
+    <DialogTrigger asChild>
+      <button type="button" className="text-neutral-400 hover:text-neutral-600 transition">
+        <HelpCircle className="w-4 h-4" />
+      </button>
+    </DialogTrigger>
+    <DialogContent className="max-w-sm">
+      <DialogHeader>
+        <DialogTitle>如何取得 Google Maps 連結</DialogTitle>
+      </DialogHeader>
+      <Tabs defaultValue="1" className="mt-2">
+        <TabsList className="w-full">
+          {HELP_STEPS.map((s) => (
+            <TabsTrigger key={s.tab} value={s.tab} className="flex-1">
+              步驟 {s.tab}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {HELP_STEPS.map((s) => (
+          <TabsContent key={s.tab} value={s.tab} className="space-y-3 pt-2">
+            <img
+              src={`/help/step-${s.tab}.png`}
+              alt={`步驟 ${s.tab}: ${s.title}`}
+              className="rounded-lg border border-neutral-200 w-full"
+            />
+            <p className="text-sm text-neutral-700">
+              <span className="font-semibold">{s.title}</span>
+              {" — "}
+              {s.description}
+            </p>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </DialogContent>
+  </Dialog>
+);
 
 export interface RestaurantFormValues {
   restaurantName: string;
@@ -92,7 +138,10 @@ export const RestaurantForm = ({ city, submitting, onSubmit }: Props) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="mapsUrl">Google Maps 連結 *</Label>
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="mapsUrl">Google Maps 連結 *</Label>
+          <MapsHelpDialog />
+        </div>
         <Input
           id="mapsUrl"
           value={values.mapsUrl}
