@@ -11,7 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RestaurantCard } from "@/components/features/RestaurantCard";
 import { cn } from "@/lib/utils";
-import type { Submission } from "@/lib/types";
+import type { Player, Submission } from "@/lib/types";
+
+export interface GuessLine {
+  voterName: string;
+  guessedName: string;
+}
 
 interface Props {
   submission: Submission | null;
@@ -22,6 +27,12 @@ interface Props {
   disabled: boolean;
   totalPoints?: number;
   isHost?: boolean;
+  // voting mode
+  players?: Player[];
+  myGuess?: string | null;
+  onGuessChange?: (guessedUid: string | null) => void;
+  // results mode
+  guessLines?: GuessLine[];
   onSetPoints: (points: number) => void;
   onOpenChange: (open: boolean) => void;
   onScheduleSet?: (playerId: string, isoString: string) => void;
@@ -57,6 +68,10 @@ export const RestaurantDialog = ({
   disabled,
   totalPoints,
   isHost,
+  players,
+  myGuess,
+  onGuessChange,
+  guessLines,
   onSetPoints,
   onOpenChange,
   onScheduleSet,
@@ -226,6 +241,39 @@ export const RestaurantDialog = ({
               <p className="text-center text-xs text-white/80 drop-shadow">
                 {scheduleLabel}
               </p>
+            )}
+
+            {/* Voting: guess who selected this restaurant */}
+            {!disabled && !isSelf && players && onGuessChange && (
+              <div className="bg-white/90 rounded-xl px-3 py-2.5 space-y-1.5">
+                <p className="text-xs text-neutral-500">你認為這是誰選的？</p>
+                <Select
+                  value={myGuess ?? ""}
+                  onValueChange={(v) => onGuessChange(v || null)}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="選一個人..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {players.map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-xs">
+                        {p.displayName ?? p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Results: show everyone's guesses */}
+            {disabled && guessLines && guessLines.length > 0 && (
+              <div className="space-y-0.5 px-1">
+                {guessLines.map((g, i) => (
+                  <p key={i} className="text-[10px] text-neutral-400 text-center leading-relaxed">
+                    {g.voterName} 認為是 {g.guessedName} 選的
+                  </p>
+                ))}
+              </div>
             )}
           </div>
         )}

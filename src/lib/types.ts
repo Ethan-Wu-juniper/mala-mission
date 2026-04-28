@@ -25,6 +25,7 @@ export interface Room {
 export interface Player {
   id: string;
   name: string | null;
+  displayName: string | null;
   photoURL: string | null;
   joinedAt: Timestamp | null;
 }
@@ -42,6 +43,7 @@ export interface Submission {
 export interface Vote {
   voterUid: string;
   allocations: Record<string, number>;
+  guesses: Record<string, string>;
   finalized: boolean;
   updatedAt: Timestamp;
 }

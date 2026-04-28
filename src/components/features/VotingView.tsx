@@ -39,8 +39,8 @@ interface Props {
   myVote: Vote | null;
   finalizedCount: number;
   capacity: number;
-  onUpdateVote: (allocations: Record<string, number>) => Promise<void>;
-  onFinalize: (allocations: Record<string, number>) => Promise<void>;
+  onUpdateVote: (allocations: Record<string, number>, guesses: Record<string, string>) => Promise<void>;
+  onFinalize: (allocations: Record<string, number>, guesses: Record<string, string>) => Promise<void>;
   onScheduleSet: (playerId: string, isoString: string) => Promise<void>;
 }
 
@@ -59,6 +59,9 @@ export const VotingView = ({
 }: Props) => {
   const [allocations, setAllocations] = useState<Record<string, number>>(
     myVote?.allocations ?? {},
+  );
+  const [guesses, setGuesses] = useState<Record<string, string>>(
+    myVote?.guesses ?? {},
   );
   const [opened, setOpened] = useState<Submission | null>(null);
   const [finalizing, setFinalizing] = useState(false);
@@ -104,6 +107,7 @@ export const VotingView = ({
     if (initialized.current) return;
     if (myVote) {
       setAllocations(myVote.allocations);
+      setGuesses(myVote.guesses ?? {});
       initialized.current = true;
     }
   }, [myVote]);
@@ -133,13 +137,21 @@ export const VotingView = ({
     if (newPoints === 0) delete next[recipientUid];
     else next[recipientUid] = newPoints;
     setAllocations(next);
-    void onUpdateVote(next);
+    void onUpdateVote(next, guesses);
+  };
+
+  const handleSetGuess = (submitterUid: string, guessedUid: string | null) => {
+    const next = { ...guesses };
+    if (guessedUid === null) delete next[submitterUid];
+    else next[submitterUid] = guessedUid;
+    setGuesses(next);
+    void onUpdateVote(allocations, next);
   };
 
   const handleFinalize = async () => {
     setFinalizing(true);
     try {
-      await onFinalize(allocations);
+      await onFinalize(allocations, guesses);
     } finally {
       setFinalizing(false);
     }
@@ -306,6 +318,9 @@ export const VotingView = ({
         remaining={remaining}
         disabled={finalized}
         isHost={myUid === hostUid}
+        players={players}
+        myGuess={opened ? guesses[opened.playerId] ?? null : null}
+        onGuessChange={(uid) => opened && handleSetGuess(opened.playerId, uid)}
         onSetPoints={(p) =>
           opened ? handleSetPoints(opened.playerId, p) : undefined
         }
