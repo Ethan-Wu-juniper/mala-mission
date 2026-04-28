@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   Flame,
   Loader2,
   LogOut,
+  RotateCcw,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -26,8 +27,10 @@ import {
 } from "@/components/forms/RestaurantForm";
 import {
   deleteRoom,
+  deleteSubmission,
   finalizeVote,
   joinRoom,
+  redrawAssignments,
   setMyVote,
   setSchedule,
   submitRestaurant,
@@ -167,10 +170,21 @@ const RoomPage = () => {
   const joinedCount = room?.joinedUids.length ?? 0;
   const isFull = room ? joinedCount >= room.capacity : false;
   const myCity = room?.assignments?.[user?.uid ?? ""] ?? null;
+  const myTag = room?.tags?.[user?.uid ?? ""] ?? "";
   const allSubmitted = room ? submissions.length >= room.capacity : false;
   const finalizedVotes = votes.filter((v) => v.finalized);
   const allFinalized = room ? finalizedVotes.length >= room.capacity : false;
   const isHost = room ? user?.uid === room.hostUid : false;
+
+  // Reset revealed state when assignments are reshuffled
+  const prevAssignmentsRef = useRef<string | null>(null);
+  useEffect(() => {
+    const version = JSON.stringify(room?.assignments);
+    if (prevAssignmentsRef.current !== null && prevAssignmentsRef.current !== version) {
+      setRevealed(false);
+    }
+    prevAssignmentsRef.current = version;
+  }, [room?.assignments]);
 
   const handleDeleteRoom = async () => {
     if (!roomId || !user) return;
@@ -186,6 +200,33 @@ const RoomPage = () => {
       });
     }
   };
+
+  const handleRedraw = useCallback(async () => {
+    if (!roomId || !user) return;
+    if (!window.confirm("確定要重新抽卡？所有已填寫的餐廳都會被清除。")) return;
+    try {
+      await redrawAssignments(roomId, user.uid);
+    } catch (err) {
+      toast({
+        title: "重新抽卡失敗",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    }
+  }, [roomId, user, toast]);
+
+  const handleRetractSubmission = useCallback(async () => {
+    if (!roomId || !user) return;
+    try {
+      await deleteSubmission(roomId, user.uid);
+    } catch (err) {
+      toast({
+        title: "反悔失敗",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    }
+  }, [roomId, user, toast]);
 
   const handleScheduleSet = async (playerId: string, isoString: string) => {
     if (!roomId) return;
@@ -330,6 +371,26 @@ const RoomPage = () => {
           <div className="text-sm text-neutral-500">
             等其他人提交... {submissions.length} / {room.capacity}
           </div>
+          <div className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleRetractSubmission}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              重新填寫
+            </Button>
+            {isHost && (
+              <Button
+                variant="outline"
+                className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                onClick={handleRedraw}
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                重新抽卡（所有人）
+              </Button>
+            )}
+          </div>
         </div>
       </Shell>
     );
@@ -367,14 +428,36 @@ const RoomPage = () => {
               <div className="text-center text-sm text-neutral-600">
                 全員到齊，點擊卡牌揭曉你的城市
               </div>
-              <CityCard city={myCity} onContinue={() => setRevealed(true)} />
+              <CityCard city={myCity} tag={myTag || undefined} onContinue={() => setRevealed(true)} />
+              {isHost && (
+                <Button
+                  variant="outline"
+                  className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                  onClick={handleRedraw}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  重新抽卡（所有人）
+                </Button>
+              )}
             </div>
           ) : (
-            <RestaurantForm
-              city={myCity}
-              submitting={submitting}
-              onSubmit={handleSubmit}
-            />
+            <div className="space-y-4">
+              <RestaurantForm
+                city={myCity}
+                submitting={submitting}
+                onSubmit={handleSubmit}
+              />
+              {isHost && (
+                <Button
+                  variant="outline"
+                  className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                  onClick={handleRedraw}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  重新抽卡（所有人）
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </Shell>

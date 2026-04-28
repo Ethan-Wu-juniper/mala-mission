@@ -114,7 +114,7 @@ const Index = () => {
             <div className="space-y-2">
               <h1 className="text-2xl font-bold text-neutral-900">開一個房間</h1>
               <p className="text-sm text-neutral-600 leading-relaxed">
-                朋友會被隨機分到「四川」或「重慶」，各自挑一間餐廳推薦
+                朋友會被隨機分到「成都」或「重慶」，各自挑一間餐廳推薦
               </p>
             </div>
 
