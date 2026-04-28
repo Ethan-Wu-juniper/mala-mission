@@ -38,7 +38,10 @@ const voteDoc = (roomId: string, uid: string) =>
 
 const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 
-function buildAssignments(uids: string[]): Record<string, City> {
+function buildAssignments(uids: string[]): {
+  assignments: Record<string, City>;
+  tags: Record<string, string>;
+} {
   const n = uids.length;
   const half = Math.floor(n / 2);
   const sichuanCount = n % 2 === 0 ? half : half + (Math.random() < 0.5 ? 1 : 0);
@@ -51,11 +54,19 @@ function buildAssignments(uids: string[]): Record<string, City> {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  const result: Record<string, City> = {};
+  const assignments: Record<string, City> = {};
   uids.forEach((uid, idx) => {
-    result[uid] = pool[idx];
+    assignments[uid] = pool[idx];
   });
-  return result;
+
+  // Half of each city's players (floor) get the "小吃" tag
+  const sichuanUids = uids.filter((_, idx) => pool[idx] === "sichuan");
+  const chongqingUids = uids.filter((_, idx) => pool[idx] === "chongqing");
+  const tags: Record<string, string> = {};
+  sichuanUids.slice(0, Math.floor(sichuanCount / 2)).forEach((uid) => { tags[uid] = "小吃"; });
+  chongqingUids.slice(0, Math.floor(chongqingCount / 2)).forEach((uid) => { tags[uid] = "小吃"; });
+
+  return { assignments, tags };
 }
 
 export async function createRoom(
@@ -74,6 +85,7 @@ export async function createRoom(
       capacity,
       status: "waiting",
       assignments: null,
+      tags: null,
       nicknames,
       joinedUids: [hostUid],
       hostUid,
@@ -118,7 +130,9 @@ export async function joinRoom(roomId: string, uid: string, photoURL?: string | 
     const roomUpdates: Record<string, unknown> = { joinedUids: newUids };
     if (newUids.length === room.capacity && room.status === "waiting") {
       roomUpdates.status = "drawn";
-      roomUpdates.assignments = buildAssignments(newUids);
+      const { assignments, tags } = buildAssignments(newUids);
+      roomUpdates.assignments = assignments;
+      roomUpdates.tags = tags;
     }
     tx.update(roomRef, roomUpdates);
   });
@@ -255,6 +269,24 @@ export async function deleteRoom(roomId: string, uid: string): Promise<void> {
     await Promise.all(colSnap.docs.map((d) => deleteDoc(d.ref)));
   }
   await deleteDoc(roomDoc(roomId));
+}
+
+export async function deleteSubmission(roomId: string, uid: string): Promise<void> {
+  await deleteDoc(submissionDoc(roomId, uid));
+}
+
+export async function redrawAssignments(roomId: string, uid: string): Promise<void> {
+  const snap = await getDoc(roomDoc(roomId));
+  if (!snap.exists()) return;
+  const room = snap.data() as Omit<Room, "id">;
+  if (room.hostUid !== uid) throw new Error("只有房主可以重新抽卡");
+
+  const { assignments, tags } = buildAssignments(room.joinedUids);
+
+  const subsSnap = await getDocs(submissionsCol(roomId));
+  await Promise.all(subsSnap.docs.map((d) => deleteDoc(d.ref)));
+
+  await updateDoc(roomDoc(roomId), { assignments, tags });
 }
 
 export async function setSchedule(

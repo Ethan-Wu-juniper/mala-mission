@@ -3,7 +3,7 @@ import type { Timestamp } from "firebase/firestore";
 export type City = "sichuan" | "chongqing";
 
 export const CITY_LABEL: Record<City, string> = {
-  sichuan: "四川",
+  sichuan: "成都",
   chongqing: "重慶",
 };
 
@@ -15,6 +15,7 @@ export interface Room {
   capacity: number;
   status: RoomStatus;
   assignments: Record<string, City> | null;
+  tags: Record<string, string> | null;
   nicknames: string[];
   joinedUids: string[];
   hostUid: string;

@@ -7,12 +7,13 @@ import { CITY_LABEL, type City } from "@/lib/types";
 
 interface Props {
   city: City;
+  tag?: string;
   onContinue?: () => void;
 }
 
 const FLIP_MS = 1600;
 
-export const CityCard = ({ city, onContinue }: Props) => {
+export const CityCard = ({ city, tag, onContinue }: Props) => {
   const [flipped, setFlipped] = useState(false);
   const [flipDone, setFlipDone] = useState(false);
 
@@ -77,8 +78,13 @@ export const CityCard = ({ city, onContinue }: Props) => {
                 {CITY_LABEL[city]}
               </div>
               <div className="text-sm tracking-[0.3em] opacity-80">
-                {city === "sichuan" ? "SICHUAN" : "CHONGQING"}
+                {city === "sichuan" ? "CHENGDU" : "CHONGQING"}
               </div>
+              {tag && (
+                <div className="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-sm font-bold tracking-widest">
+                  {tag}
+                </div>
+              )}
             </div>
             <div className="absolute inset-3 rounded-xl border border-white/20 pointer-events-none" />
           </div>
