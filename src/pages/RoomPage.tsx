@@ -30,6 +30,7 @@ import {
   deleteSubmission,
   finalizeVote,
   joinRoom,
+  randomizeNicknames,
   redrawAssignments,
   setMyVote,
   setSchedule,
@@ -215,6 +216,19 @@ const RoomPage = () => {
     }
   }, [roomId, user, toast]);
 
+  const handleRandomizeNicknames = useCallback(async () => {
+    if (!roomId || !user) return;
+    try {
+      await randomizeNicknames(roomId, user.uid);
+    } catch (err) {
+      toast({
+        title: "更換暱稱失敗",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    }
+  }, [roomId, user, toast]);
+
   const handleRetractSubmission = useCallback(async () => {
     if (!roomId || !user) return;
     try {
@@ -243,7 +257,7 @@ const RoomPage = () => {
     if (!user || !roomId) return;
     setJoining(true);
     try {
-      await joinRoom(roomId, user.uid, user.photoURL);
+      await joinRoom(roomId, user.uid, user.photoURL, user.displayName);
     } catch (err) {
       toast({
         title: "加入失敗",
@@ -346,8 +360,8 @@ const RoomPage = () => {
           myVote={myVote}
           finalizedCount={finalizedVotes.length}
           capacity={room.capacity}
-          onUpdateVote={(a) => setMyVote(roomId!, user.uid, a)}
-          onFinalize={(a) => finalizeVote(roomId!, user.uid, a)}
+          onUpdateVote={(a, g) => setMyVote(roomId!, user.uid, a, g)}
+          onFinalize={(a, g) => finalizeVote(roomId!, user.uid, a, g)}
           onScheduleSet={handleScheduleSet}
         />
       </Shell>
@@ -430,18 +444,31 @@ const RoomPage = () => {
               </div>
               <CityCard city={myCity} tag={myTag || undefined} onContinue={() => setRevealed(true)} />
               {isHost && (
-                <Button
-                  variant="outline"
-                  className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
-                  onClick={handleRedraw}
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  重新抽卡（所有人）
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                    onClick={handleRedraw}
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    重新抽卡（所有人）
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleRandomizeNicknames}
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    隨機暱稱
+                  </Button>
+                </>
               )}
             </div>
           ) : (
             <div className="space-y-4">
+              <p className="text-center text-xs text-neutral-400">
+                已提交 {submissions.length} / {room.capacity} 人
+              </p>
               <RestaurantForm
                 city={myCity}
                 submitting={submitting}
@@ -523,14 +550,24 @@ const RoomPage = () => {
         {isHost && (
           <>
             <Separator />
-            <Button
-              variant="outline"
-              className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-              onClick={handleDeleteRoom}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              刪除房間
-            </Button>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleRandomizeNicknames}
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                隨機暱稱
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                onClick={handleDeleteRoom}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                刪除房間
+              </Button>
+            </div>
           </>
         )}
       </div>

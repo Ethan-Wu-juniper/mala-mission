@@ -12,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
   type Unsubscribe,
 } from "firebase/firestore";
 
@@ -74,6 +75,7 @@ export async function createRoom(
   hostUid: string,
   hostPhotoURL?: string | null,
   title?: string,
+  hostDisplayName?: string | null,
 ): Promise<{ roomId: string }> {
   if (capacity < 2) throw new Error("人數至少要 2 人");
   const roomId = newId();
@@ -94,6 +96,7 @@ export async function createRoom(
     tx.set(playerDoc(roomId, hostUid), {
       uid: hostUid,
       name: nicknames[0],
+      displayName: hostDisplayName ?? null,
       photoURL: hostPhotoURL ?? null,
       joinedAt: serverTimestamp(),
     });
@@ -102,7 +105,7 @@ export async function createRoom(
   return { roomId };
 }
 
-export async function joinRoom(roomId: string, uid: string, photoURL?: string | null): Promise<void> {
+export async function joinRoom(roomId: string, uid: string, photoURL?: string | null, displayName?: string | null): Promise<void> {
   await runTransaction(db, async (tx) => {
     const playerRef = playerDoc(roomId, uid);
     const roomRef = roomDoc(roomId);
@@ -123,6 +126,7 @@ export async function joinRoom(roomId: string, uid: string, photoURL?: string | 
     tx.set(playerRef, {
       uid,
       name: nickname,
+      displayName: displayName ?? null,
       photoURL: photoURL ?? null,
       joinedAt: serverTimestamp(),
     });
@@ -235,10 +239,12 @@ export async function setMyVote(
   roomId: string,
   voterUid: string,
   allocations: Record<string, number>,
+  guesses: Record<string, string> = {},
 ): Promise<void> {
   await setDoc(voteDoc(roomId, voterUid), {
     voterUid,
     allocations,
+    guesses,
     finalized: false,
     updatedAt: serverTimestamp(),
   });
@@ -248,10 +254,12 @@ export async function finalizeVote(
   roomId: string,
   voterUid: string,
   allocations: Record<string, number>,
+  guesses: Record<string, string> = {},
 ): Promise<void> {
   await setDoc(voteDoc(roomId, voterUid), {
     voterUid,
     allocations,
+    guesses,
     finalized: true,
     updatedAt: serverTimestamp(),
   });
@@ -287,6 +295,24 @@ export async function redrawAssignments(roomId: string, uid: string): Promise<vo
   await Promise.all(subsSnap.docs.map((d) => deleteDoc(d.ref)));
 
   await updateDoc(roomDoc(roomId), { assignments, tags });
+}
+
+export async function randomizeNicknames(roomId: string, uid: string): Promise<void> {
+  const snap = await getDoc(roomDoc(roomId));
+  if (!snap.exists()) return;
+  const room = snap.data() as Omit<Room, "id">;
+  if (room.hostUid !== uid) throw new Error("只有房主可以更換暱稱");
+
+  const playerSnaps = await getDocs(playersCol(roomId));
+  const count = playerSnaps.docs.length;
+  const newNicknames = pickNicknames(count);
+
+  const batch = writeBatch(db);
+  playerSnaps.docs.forEach((d, i) => {
+    batch.update(d.ref, { name: newNicknames[i] });
+  });
+  batch.update(roomDoc(roomId), { nicknames: newNicknames });
+  await batch.commit();
 }
 
 export async function setSchedule(

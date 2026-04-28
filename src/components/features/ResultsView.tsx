@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Star } from "lucide-react";
 
-import { RestaurantDialog } from "@/components/features/RestaurantDialog";
+import { RestaurantDialog, type GuessLine } from "@/components/features/RestaurantDialog";
 import { cn } from "@/lib/utils";
 import type { Player, Submission, Vote } from "@/lib/types";
 
@@ -180,6 +180,20 @@ export const ResultsView = ({ submissions, votes, players, myUid, hostUid, onSch
     ? ranked.find((r) => r.submission.playerId === opened.playerId)
     : null;
 
+  const openedGuessLines = useMemo<GuessLine[]>(() => {
+    if (!opened) return [];
+    return votes
+      .filter((v) => v.guesses?.[opened.playerId])
+      .map((v) => {
+        const voter = playerMap.get(v.voterUid);
+        const guessedPlayer = playerMap.get(v.guesses[opened.playerId]);
+        return {
+          voterName: voter?.displayName ?? voter?.name ?? v.voterUid,
+          guessedName: guessedPlayer?.displayName ?? guessedPlayer?.name ?? v.guesses[opened.playerId],
+        };
+      });
+  }, [opened, votes, playerMap]);
+
   return (
     <div className="space-y-8 pb-10">
       <div className="text-center pt-4">
@@ -251,6 +265,7 @@ export const ResultsView = ({ submissions, votes, players, myUid, hostUid, onSch
         disabled
         totalPoints={openedRanked?.total}
         isHost={myUid === hostUid}
+        guessLines={openedGuessLines}
         onSetPoints={() => {}}
         onOpenChange={(open) => !open && setOpened(null)}
         onScheduleSet={onScheduleSet}
