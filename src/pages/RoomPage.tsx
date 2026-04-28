@@ -466,6 +466,9 @@ const RoomPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
+              <p className="text-center text-xs text-neutral-400">
+                已提交 {submissions.length} / {room.capacity} 人
+              </p>
               <RestaurantForm
                 city={myCity}
                 submitting={submitting}
